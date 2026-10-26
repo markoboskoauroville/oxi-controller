@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 6
+let VERSION = 7
 
 @main
 struct DJMantraAbletonRemote: App {
