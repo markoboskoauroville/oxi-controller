@@ -132,3 +132,7 @@
 > "in the app, please color code the push part. Put it in orange" (Marko, 26.10.2026)
 
 27. The "Push: …" lines orange in both views (his notes blue, to tell them apart). — **Status:** v16.
+
+> "I want to still to arrange more this list list view. Let's do it like this list view: First is the function, third track, up, down, push, automation view A, and then there is a knob, and then there is a note. We change the order, and also for everything I'm doing with my controller there in the list. Remind me on the shortcut inside Ableton Live understand shortcut inside Ableton Live in parentheses for each function, if it exists, of course" (Marko, 26.10.2026)
+
+28. LIST rows: the function first (turn, push), then the knob, then the note; Live's own shortcut in parentheses after every function that has one. — **Status:** v17: rows = Turn/Push (push orange) · ring and number · name · note; shortcuts: track ↑ ↓, automation view A, play/stop Space, automation record F9, playhead ← → by the grid, clicked parameter: click then ↑ ↓, pitch to zero: click Transpose then Delete, MIDI knobs: map with ⌘M; none for the parameter step, the status line and the help. Seen in a screenshot.

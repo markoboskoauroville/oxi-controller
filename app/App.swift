@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 16
+let VERSION = 17
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -126,7 +126,13 @@ struct KnobRow: View {
     var body: some View {
         let k = e.knobs[i]
         let span = Double(max(1, k.high - k.low))
+        // v17 (Marko, 26.10.2026: "First is the function ... and then there is a knob, and then there is a note")
         HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(e.turnText(i)).font(.callout).fixedSize(horizontal: false, vertical: true)
+                Text(e.pushText(i)).font(.callout).foregroundStyle(orange).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(minWidth: 260, maxWidth: .infinity, alignment: .leading)
             ZStack {
                 Circle().stroke(Color.gray.opacity(0.25), lineWidth: 4)
                 Circle().trim(from: 0, to: (e.values[i] - Double(k.low)) / span).stroke(k.colour, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
@@ -135,11 +141,7 @@ struct KnobRow: View {
             .frame(width: 34, height: 34)
             Text(k.name).font(.system(.body, design: .monospaced).bold()).frame(width: 52, alignment: .leading)
             TextField("my note", text: Binding(get: { e.knobs[i].note }, set: { e.knobs[i].note = $0; e.save() }))   // saved as typed
-                .textFieldStyle(.roundedBorder).frame(minWidth: 140, maxWidth: 220)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(e.turnText(i)).font(.callout).fixedSize(horizontal: false, vertical: true)
-                Text(e.pushText(i)).font(.callout).foregroundStyle(orange).fixedSize(horizontal: false, vertical: true)
-            }
+                .textFieldStyle(.roundedBorder).frame(minWidth: 140, maxWidth: 200)
             Spacer(minLength: 0)
         }
         .padding(6)

@@ -201,14 +201,14 @@ final class Engine: ObservableObject {
         if i == 15 { return "Turn: help pages on the E16" }
         let k = knobs[i]
         switch k.turnRole {
-        case .tracks: return "Turn: track up / down"
-        case .scrub: return "Turn: playhead, a 16th per step"
-        case .selected: return "Turn: the parameter clicked (or stepped to)"
+        case .tracks: return "Turn: track up / down (↑ ↓)"
+        case .scrub: return "Turn: playhead, a 16th per step (← → by the grid)"
+        case .selected: return "Turn: the parameter clicked or stepped to (click it, then ↑ ↓)"
         case .paramStep: return "Turn: next / previous parameter"
         case .clipPitch: return "Turn: clip pitch, 5 cents a step"
         case .hover: return "Turn: the control under the mouse"
         case .parameter: return "Turn: the device's parameters"
-        case .midi: return "Turn: CC \(k.cc), channel \(k.channel)"
+        case .midi: return "Turn: CC \(k.cc), channel \(k.channel) (map it: ⌘M)"
         }
     }
 
@@ -217,9 +217,9 @@ final class Engine: ObservableObject {
         let k = knobs[i]
         switch k.pushRole {
         case .automationView: return "Push: automation view (A)"
-        case .automationRecord: return "Push: automation record on / off"
-        case .playStop: return "Push: play / stop"
-        case .pitchZero: return "Push: pitch back to zero"
+        case .automationRecord: return "Push: automation record on / off (F9)"
+        case .playStop: return "Push: play / stop (Space)"
+        case .pitchZero: return "Push: pitch back to zero (click Transpose, then Delete)"
         case .statusLine: return "Push: Live's status line off"
         case .midi:
             let what = "\(k.pushKind == .note ? "note" : "CC") \(k.pushNumber)"
