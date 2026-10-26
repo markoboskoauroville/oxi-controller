@@ -42,4 +42,4 @@
 
 > "Please also ask them to add to explain how to. Update firmware for Oxi over our app. We can use also update the firmware. Why not?" (Marko, 26.10.2026)
 
-11. Firmware updates of the E16 from our app; OXI asked how (the update protocol, the firmware files). — **Status:** follow-up email drafted.
+11. Firmware updates of the E16 from our app; OXI asked how (the update protocol, the firmware files). — **Status:** asked: a reply in the same thread from marko.bosko@gmail.com to support@oxiinstruments.com, 26.10.2026 (Marko chose the account).
