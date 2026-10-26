@@ -19,3 +19,7 @@
 
 5. FIRST TEST: store several configurations and recall them, configurations chosen here, and visible on the device — the rings' colours, the text on its display: the device's visual side under the app's control. — **Status:** asked; waits for the research (how a colour and a display text reach the E16).
 6. THEN: Ableton Live through OSC (AbletonOSC, already on the Mac for Ableton Assistant A1) and MIDI, all combined in Oxi Controller, so the E16 drives Live. — **Status:** asked.
+
+> "m key is also very important to control because it can control parts of Ableton Live, which otherwise we cannot control. M key from the protocol: we already work with it" (Marko, 26.10.2026; read as MACKIE, the Mackie Control protocol of ~/Developer/MANTRA_MACKIE)
+
+7. Mackie Control too: Oxi Controller speaks the Mackie protocol to Live (MANTRA_MACKIE already does, through IAC to Live's MackieControl), for the parts of Live that nothing else reaches. — **Status:** asked, with 6.
