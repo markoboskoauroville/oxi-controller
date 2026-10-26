@@ -109,6 +109,25 @@ Knob 15 has it. Tested in Live 12.4.6 on "01 Jai Ganesha Pahi Mam": four steps l
 - Pushes are **momentary** by default: note on when pressed, off when released. Live's MIDI-mapped buttons then flip
   on every press.
 
+## The screen and the page cross (v22, 26.10.2026)
+
+- **The screen** has no title any more: it shows sixteen cells in the knobs' own 4 × 4 order. Each cell has two lines
+  of five letters, the turn on top and the push under it. Both lines are yours: SETUP → "Screen, turn line" and
+  "Screen, push line". By default they read CC17 / N17, or a word for an app role (TRK / AUTO, TIME / PLAY …). The
+  knob just touched is drawn inverted, and Shift shows the values on the top line. The app draws the screen itself in
+  a 5 × 7 pixel font (app/Screen.swift), because a system font smears at this size.
+- **What Live answers** (TRACK …, ZOOM IN) fills the screen in big letters for two seconds, then the labels come back.
+- **The page cross.** Tap Shift twice (within half a second). The rings paint a cross:
+  - the two middle knobs of the top row: ▲ the last page in use;
+  - of the bottom row: ▼ page 1;
+  - the left column's middle two: ◀ one page back;
+  - the right column's middle two: ▶ one page on;
+  - the four in the middle, white: turn them to flip the pages one by one, push one to leave;
+  - the corners stay dark.
+  The screen shows PAGE n OF 112. Tap Shift twice again, or push the middle, to go back to the knobs.
+- Seen through the Mantra Manual Camera above the E16 (`MANTRA_NDI/scripts`, `mcam snap`; focus 0.5 is sharp at this
+  distance).
+
 ## Next
 
 1. The app itself (Swift, the camera's rail language): looks and presets on a page, edited live.

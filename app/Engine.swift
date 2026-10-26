@@ -37,8 +37,10 @@ struct KnobSetup: Codable, Equatable {
     var pushLabel: String = ""
     /// v21 (Marko, 26.10.2026: "adjust the color and the intensity of the ring"): 0.1...1, the ring's brightness
     var intensity: Double = 1
+    /// v22: the screen's second line under the knob, what the push does (five letters); the first line is name
+    var pushName: String = ""
 
-    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole, note, turnLabel, pushLabel, intensity }
+    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole, note, turnLabel, pushLabel, intensity, pushName }
     init(name: String, r: Double, g: Double, b: Double, cc: Int, channel: Int, pushNumber: Int) {
         self.name = name; self.r = r; self.g = g; self.b = b; self.cc = cc; self.channel = channel; self.pushNumber = pushNumber
     }
@@ -55,6 +57,7 @@ struct KnobSetup: Codable, Equatable {
         turnLabel = try c.decodeIfPresent(String.self, forKey: .turnLabel) ?? ""
         pushLabel = try c.decodeIfPresent(String.self, forKey: .pushLabel) ?? ""
         intensity = try c.decodeIfPresent(Double.self, forKey: .intensity) ?? 1
+        pushName = try c.decodeIfPresent(String.self, forKey: .pushName) ?? ""
     }
 
     var colour: Color { Color(red: r, green: g, blue: b) }
@@ -73,12 +76,30 @@ struct KnobSetup: Codable, Equatable {
     mutating func number(_ g: Int) {
         let (ch, n) = KnobSetup.numbers(g)
         cc = n; channel = ch; pushNumber = n; pushChannel = ch; pushKind = .note
+        if name.range(of: #"^(K|CC)\d+$"#, options: .regularExpression) != nil { name = "CC\(n)" }   // the old K<n> names
+    }
+
+    /// The screen's two lines (v22): the turn's name, and the push's (his own, or a word for what it does).
+    var screenLines: (String, String) {
+        let push: String
+        if !pushName.isEmpty { push = pushName }
+        else {
+            switch pushRole {
+            case .automationView: push = "AUTO"
+            case .automationRecord: push = "REC"
+            case .playStop: push = "PLAY"
+            case .pitchZero: push = "ZERO"
+            case .statusLine: push = "LINE"
+            case .midi: push = self.push == .off ? "" : "N\(pushNumber)"
+            }
+        }
+        return (name, push)
     }
 
     static func defaults(_ g: Int) -> KnobSetup {
         let hue = Double(g % 16) / 16
         let c = NSColor(hue: hue, saturation: 0.9, brightness: 1, alpha: 1).usingColorSpace(.sRGB) ?? .white
-        var k = KnobSetup(name: "K\(g + 1)", r: Double(c.redComponent), g: Double(c.greenComponent), b: Double(c.blueComponent),
+        var k = KnobSetup(name: "CC\(numbers(g).number)", r: Double(c.redComponent), g: Double(c.greenComponent), b: Double(c.blueComponent),
                           cc: 1, channel: 1, pushNumber: 1)
         k.number(g); k.push = .momentary     // momentary: Live's mapped button flips on every press
         return k
@@ -109,7 +130,7 @@ final class Engine: ObservableObject {
         while pageValues.count < pages.count { pageValues.append(Array(repeating: 0, count: 16)) }
         while pagePushed.count < pages.count { pagePushed.append(Array(repeating: false, count: 16)) }
         page = p; lastTouched = nil; liveSays = ""
-        status = pageLine()
+        status = navMode ? "PAGE \(p + 1) of \(KnobSetup.pageCount)" : pageLine()
         drawAll()
     }
 
@@ -168,6 +189,7 @@ final class Engine: ObservableObject {
                 case "release": self.heard([0x80, UInt8(knob), 0])
                 case "shift": self.heard([w.count > 1 && w[1] == "1" ? 0x90 : 0x80, 16, w.count > 1 && w[1] == "1" ? 127 : 0])
                 case "present": self.togglePresent()
+                case "nav": self.setNav(!self.navMode)
                 case "role":   // role 15 ZOOM: a knob's turn role, as APPLY sets it (v20, for tests from the Mac)
                     if let r = KnobSetup.TurnRole(rawValue: w.dropFirst(2).joined(separator: " ")) { self.knobs[knob].turnRole = r; self.edited(); self.save() }
                 default: break
@@ -316,6 +338,11 @@ final class Engine: ObservableObject {
         // knob sixteen is a knob like the others; with Shift held it turns the pages
         if kind == 0xB0, b[1] == 16, shift { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
         if helpPage != nil, kind == 0xB0 || (kind == 0x90 && b[2] > 0) { helpPage = nil }
+        if navMode {
+            if kind == 0xB0, Engine.navMiddle.contains(Int(b[1]) - 1) { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
+            if kind == 0x90, b[2] > 0, b[1] < 16 { navPress(Int(b[1])); return }
+            if !(b[1] == 16 && (kind == 0x90 || kind == 0x80)) { return }
+        }
         if kind == 0xB0, (1...16).contains(Int(b[1])) {                   // a turn
             let i = Int(b[1]) - 1
             let raw = Int(b[2])
@@ -323,7 +350,14 @@ final class Engine: ObservableObject {
             turn(i, by: Double(step))
         } else if kind == 0x90 || kind == 0x80 {                          // a push or a release
             let note = Int(b[1]); let down = kind == 0x90 && b[2] > 0
-            if note == 16 { shift = down; drawLabels(); return }
+            if note == 16 {
+                shift = down
+                if down {   // Shift tapped twice within half a second: the page cross on or off
+                    if Date().timeIntervalSince(lastShiftTap) < 0.5 { lastShiftTap = .distantPast; setNav(!navMode); return }
+                    lastShiftTap = Date()
+                }
+                drawLabels(); return
+            }
             if (0..<16).contains(note) { press(note, down: down) }
         }
     }
@@ -400,9 +434,12 @@ final class Engine: ObservableObject {
     /// What Live says, big on the screen under the preset's name (and in the app's status line).
     func showLive(_ said: String) {
         liveSays = said; status = "Live: " + said
-        guard connected, !presenting, let e16 else { return }
+        guard connected, !presenting, !navMode, let e16 else { return }
         helpPage = nil
-        e16.send(E16Message.framebuffer(Signature.page(title: setupName.uppercased(), body: said, number: "LIVE")))
+        // v22: Live's answer big for two seconds, then the labels again
+        e16.send(E16Message.framebuffer(Screen.message(said)))
+        messageUntil = Date().addingTimeInterval(2)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.05) { [weak self] in self?.drawLabels() }
     }
 
     func press(_ i: Int, down: Bool) {
@@ -457,6 +494,13 @@ final class Engine: ObservableObject {
     private func flushRings() {
         guard ringsDue, connected, !presenting, let e16 else { return }
         ringsDue = false
+        if navMode {   // the cross: arms orange, full; the middle white; the corners dark
+            let arms = Engine.navLeft.union(Engine.navRight).union(Engine.navUp).union(Engine.navDown)
+            e16.send(E16Message.rings((0..<16).map { i in
+                arms.contains(i) ? Ring(r: 127, g: 60, b: 0, amount: 1) : Engine.navMiddle.contains(i) ? Ring(r: 110, g: 110, b: 110, amount: 1) : Ring(r: 0, g: 0, b: 0, amount: 0)
+            }))
+            return
+        }
         let rings = (0..<16).map { i -> Ring in
             let k = knobs[i]
             let lit = (k.push == .off || pushed[i] ? 1.0 : 0.35) * k.intensity  // a toggled-off knob glows dimmer
@@ -471,12 +515,43 @@ final class Engine: ObservableObject {
     /// their names; with Shift held, their values.
     func drawLabels() {
         guard connected, !presenting, let e16 else { return }
-        let title: String
-        if let i = lastTouched, knobs[i].turnRole != .midi || knobs[i].pushRole != .midi, !liveSays.isEmpty { title = liveSays }
-        else if let i = lastTouched { title = "\(knobs[i].name) \(Int(values[i].rounded()))" + (knobs[i].push != .off && pushed[i] ? " ON" : "") }
-        else { title = "\(setupName) P\(page + 1)" }
-        let labels = (0..<16).map { shift ? String(Int(values[$0].rounded())) : knobs[$0].name }
-        e16.send(E16Message.labels(title: title, labels: labels))
+        if navMode { e16.send(E16Message.framebuffer(Screen.nav(page: page, of: KnobSetup.pageCount, last: lastPage))); return }
+        guard Date() >= messageUntil else { return }
+        // v22 (Marko, 26.10.2026: "removing the title ... all the space for my custom labels"): two lines a knob; with
+        // Shift held the first line is the knob's value
+        let cells = (0..<16).map { i -> (String, String) in
+            let (t, p) = knobs[i].screenLines
+            return (shift ? String(Int(values[i].rounded())) : t, knobs[i].push != .off && pushed[i] && knobs[i].pushRole == .midi ? "ON" : p)
+        }
+        e16.send(E16Message.framebuffer(Screen.grid(cells, touched: lastTouched)))
+    }
+
+    // MARK: v22, the page cross (Marko, 26.10.2026: "I tap the Shift key 2 times, and I enter a special mode to navigate
+    // the pages ... paint a cross with the light ... All buttons on the left side are the left arrow, all buttons on the
+    // right side are the right arrow, all buttons above the middle are the up arrow, and all buttons below the middle
+    // are the down arrow. The 4 in the middle are for turning")
+
+    @Published var navMode = false
+    private var lastShiftTap = Date.distantPast
+    private var messageUntil = Date.distantPast
+    static let navLeft: Set<Int> = [4, 8], navRight: Set<Int> = [7, 11], navUp: Set<Int> = [1, 2], navDown: Set<Int> = [13, 14]
+    static let navMiddle: Set<Int> = [5, 6, 9, 10]
+    /// The last page in use: the highest page opened or set up (up arrow).
+    var lastPage: Int { pages.count - 1 }
+
+    func setNav(_ on: Bool) {
+        navMode = on; lastTouched = nil
+        status = on ? "PAGES: ◀ ▶ one page, ▲ the last page in use, ▼ page 1, turn the middle to flip, push the middle or tap Shift twice to leave" : pageLine()
+        drawAll()
+    }
+
+    /// A push while the cross is lit.
+    private func navPress(_ i: Int) {
+        if Engine.navLeft.contains(i) { goTo(page: page - 1) }
+        else if Engine.navRight.contains(i) { goTo(page: page + 1) }
+        else if Engine.navUp.contains(i) { goTo(page: lastPage) }
+        else if Engine.navDown.contains(i) { goTo(page: 0) }
+        else if Engine.navMiddle.contains(i) { setNav(false) }
     }
 
     // MARK: PRESENT THE OXI

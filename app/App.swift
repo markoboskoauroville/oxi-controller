@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 21
+let VERSION = 22
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -203,7 +203,9 @@ struct Editor: View {
         let b = Binding(get: { e.knobs[i] }, set: { e.knobs[i] = $0; e.edited() })
         Form {
             Section("KNOB \(i + 1) · PAGE \(e.page + 1) · CC and note \(b.wrappedValue.cc), channel \(b.wrappedValue.channel)") {
-                TextField("Name (4 on the screen)", text: Binding(get: { b.wrappedValue.name }, set: { b.wrappedValue.name = String($0.prefix(4)).uppercased() }))
+                // v22: the E16's screen shows two lines under each knob, five letters each
+                TextField("Screen, turn line (5)", text: Binding(get: { b.wrappedValue.name }, set: { b.wrappedValue.name = String($0.prefix(5)).uppercased() }))
+                TextField("Screen, push line (5)", text: Binding(get: { b.wrappedValue.pushName }, set: { b.wrappedValue.pushName = String($0.prefix(5)).uppercased() }), prompt: Text(b.wrappedValue.screenLines.1))
             }
             // v21 (Marko, 26.10.2026: "a color picker with all the available colors, so the user can adjust the color and
             // the intensity of the ring"): the palette, any colour beside it, and the ring's brightness
