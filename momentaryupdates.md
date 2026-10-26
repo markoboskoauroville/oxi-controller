@@ -73,3 +73,7 @@
 16. HOVER mode: the mouse pointer rests over any knob or slider in Live; turning the hardware knob turns that control, as the mouse's scroll wheel would. — **Status:** v5: TurnRole HOVER; in AUTOMATION knob 2 is HOVER. A turn becomes Live's own gesture for a control, a small vertical drag at the pointer (3 px a step, Shift: 1 px with ⌘ = Live's fine), posted to Live alone (the real pointer stays), steps within 250 ms one drag. Needs the app allowed in Accessibility (asked on first use). Not on a clip: the same drag would move it. Not yet tried by hand.
 
 - 26.10.2026, Marko turned every knob: nothing reached the app. A monitor on all three ports showed 129 messages on Port 1 (the right one) but every word read 0: the receiver kept a pointer to a copy of the packet's words (LESSONS). Fixed in v6; proof: the ACK is recognised for the first time ("remote mode: entered (ACK)").
+
+> "everything working, only three doesn't work. I cannot change parameters by selecting them or hovering over them" (Marko, 26.10.2026)
+
+- Test by hand 26.10.2026 (v6): knob 1 (tracks, automation view), knob 3 (scrub, play/stop), knob 16 (help) work; knob 2 HOVER does not change a parameter, neither hovered nor selected. — **Status:** in work.
