@@ -128,3 +128,7 @@
 > "Camera is again on. Please finish testing, and then you need to update my DJ Mantra Ableton Remote for Oxi E16. You need to write under each of the nodes in the application: what is it doing? What is its function? There is enough space for everything. I want to see what the knobs do right on this screen Please make two views: same as an icon view, what is now, or list view. Next to each knob, there will be a text field, one per knob, and then a description, so I can quickly remind myself what each knob is doing." (Marko, 26.10.2026)
 
 26. Under every knob in the window: what its turn and its push do. Two views: KNOBS (the grid, as now) and LIST (a row per knob: the ring, a note of his own in a text field, the description). — **Status:** v15: KNOBS shows under each knob "Turn: …" and "Push: …" (and his note in orange when written); LIST: ring and number, name, a "my note" field (saved with the setup as typed), the two descriptions; the choice remembered. Seen in screenshots of the window.
+
+> "in the app, please color code the push part. Put it in orange" (Marko, 26.10.2026)
+
+27. The "Push: …" lines orange in both views (his notes blue, to tell them apart). — **Status:** v16.

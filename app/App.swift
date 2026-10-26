@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 15
+let VERSION = 16
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -34,6 +34,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
 }
 
 private let orange = Color(red: 1, green: 0.58, blue: 0)
+private let noteBlue = Color(red: 0.36, green: 0.72, blue: 1)
 
 struct Main: View {
     @EnvironmentObject var e: Engine
@@ -99,8 +100,9 @@ struct KnobCell: View {
             Text(k.name).font(.system(.callout, design: .monospaced).bold()).lineLimit(1)
             // what it does, in full (Marko: "I want to see what the knobs do right on this screen")
             Text(e.turnText(i)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            Text(e.pushText(i)).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            if !k.note.isEmpty { Text(k.note).font(.caption).italic().foregroundStyle(orange).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
+            // the push in orange (Marko, 26.10.2026: "color code the push part. Put it in orange"); his note in blue
+            Text(e.pushText(i)).font(.caption).foregroundStyle(orange).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            if !k.note.isEmpty { Text(k.note).font(.caption).italic().foregroundStyle(noteBlue).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
         }
         .padding(6)
         .frame(maxWidth: .infinity)
@@ -136,7 +138,7 @@ struct KnobRow: View {
                 .textFieldStyle(.roundedBorder).frame(minWidth: 140, maxWidth: 220)
             VStack(alignment: .leading, spacing: 1) {
                 Text(e.turnText(i)).font(.callout).fixedSize(horizontal: false, vertical: true)
-                Text(e.pushText(i)).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(e.pushText(i)).font(.callout).foregroundStyle(orange).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
