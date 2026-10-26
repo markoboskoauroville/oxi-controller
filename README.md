@@ -44,8 +44,10 @@ the knob's SETUP) and asks for one of three verdicts:
 
 - **POSSIBLE**: the roles that do it, with an **APPLY** button that sets them on the knob.
 - **PARTLY**: what works now, and under *To make it possible* what is missing.
-- **IMPOSSIBLE**: it says so, and what would have to change: a new role in the app, a new AbletonOSC handler, a Live
-  API that exists or does not, or a limit of the E16 itself.
+- **NOT YET · CAN BE BUILT** *(v19)*: the app cannot do it today but can be extended. Claude names the route: a new
+  AbletonOSC handler on Live's API, acting as a Mackie Control unit, a Live keyboard shortcut, or MIDI Map.
+- **IMPOSSIBLE**: only when no route can do it at all (Live exposes nothing for it, or the E16 cannot), and why.
+  *(v18 called the zoom "impossible"; Marko: "it is possible ... with the Mackie protocol". v19 makes the difference.)*
 
 Nothing Claude writes runs by itself. The app accepts only roles from its own list and changes a knob only when
 APPLY is pressed. Answer back in the chat to go another round. Each knob keeps its own conversation (CLEAR starts

@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 18
+let VERSION = 19
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -282,8 +282,9 @@ private struct Bubble: View {
                 Text(t.text).foregroundStyle(noteBlue)
             } else {
                 if let v = t.verdict {
-                    Text(v.uppercased()).font(.caption.bold())
-                        .foregroundStyle(v == "possible" ? .green : v == "partly" ? .yellow : .red)
+                    // v19 (Marko, 26.10.2026: zoom was called impossible "but it is possible"): NOT YET is not IMPOSSIBLE
+                    Text(v == "buildable" ? "NOT YET · CAN BE BUILT" : v.uppercased()).font(.caption.bold())
+                        .foregroundStyle(v == "possible" ? .green : v == "partly" ? .yellow : v == "buildable" ? orange : .red)
                 }
                 Text(t.text)
                 if let n = t.needs { Text("To make it possible: " + n).font(.caption).foregroundStyle(.secondary) }

@@ -12,7 +12,7 @@ struct ChatTurn: Codable, Equatable, Identifiable {
     var id = UUID()
     var fromMarko: Bool
     var text: String
-    var verdict: String? = nil          // possible | partly | impossible (Claude's turns)
+    var verdict: String? = nil          // possible | partly | buildable | impossible (Claude's turns)
     var turnRole: String? = nil
     var pushRole: String? = nil
     var needs: String? = nil            // what the app would need for the rest
@@ -67,10 +67,19 @@ enum Chats {
     - verdict "possible" when one TURN role and/or one PUSH role from the catalogue does what he asks; name them \
     exactly as written in the catalogue.
     - verdict "partly" when a role covers part of it; name that role and say in "needs" what is missing.
-    - verdict "impossible" when nothing in the catalogue does it. Say so plainly in "answer". In "needs", say what \
-    would have to change to make it possible: a new role in the app, a new handler in AbletonOSC, a Live API that \
-    exists or does not, or a limit of the E16 hardware (16 endless knobs with push, one shift key, 128x64 screen). \
-    If even that cannot work (Live's API has no such thing), say that too.
+    - verdict "buildable" when the catalogue cannot do it today but the app can be extended to do it. Say plainly \
+    "not yet, but it can be built", and in "needs" name the route and what to add. Most requests are this.
+    - verdict "impossible" ONLY when no route below can do it at all (Live exposes nothing for it, or the E16 \
+    hardware cannot). Say why. Never use "impossible" for something that only needs new code.
+    The routes the app can be extended through (Marko, 26.10.2026: zoom was called impossible and it is not):
+      1. A new handler in AbletonOSC calling Live's Python API (Song, Track, Clip, Device, \
+    Application.View: zoom_view, scroll_view, focus_view, show_view and more). This is how the app's own roles work.
+      2. Mackie Control: Live ships a MackieControl surface script; the app can act as a Mackie Control unit on a \
+    virtual port and send its buttons (zoom with the cursor keys, banks, transport, markers, fader and V-pot \
+    messages). Uses one of Live's control surface slots.
+      3. A Live keyboard shortcut sent to Live's window (as the AUTOMATION VIEW role sends A).
+      4. MIDI Map of a CC or note (anything Live shows in blue in MIDI Map mode).
+    The E16 hardware: 16 endless knobs with push, one shift key, a 128x64 screen.
     Never claim a role does more than its catalogue line says. Keep "answer" short, plain English, no lists of \
     options he did not ask for. If his message is a question, answer it; verdict then describes the knob as set now.
     The knob's current setup: {CURRENT}
@@ -79,7 +88,7 @@ enum Chats {
     static let schema: [String: Any] = [
         "type": "object",
         "properties": [
-            "verdict": ["type": "string", "enum": ["possible", "partly", "impossible"]],
+            "verdict": ["type": "string", "enum": ["possible", "partly", "buildable", "impossible"]],
             "answer": ["type": "string"],
             "turn_role": ["anyOf": [["type": "string", "enum": KnobSetup.TurnRole.allCases.map(\.rawValue)], ["type": "null"]]],
             "push_role": ["anyOf": [["type": "string", "enum": KnobSetup.PushRole.allCases.map(\.rawValue)], ["type": "null"]]],
