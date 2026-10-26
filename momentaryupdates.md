@@ -55,3 +55,15 @@
 > "otherwise, on the matrix screen, you need to describe what parameters are doing, what knobs are doing, and to scroll between pages. There is a page scroller for help files. If there is not enough text, you need to actually write big text. No shortcuts. Everything needs to be explained. Help page. I'm scrolling with the 16 encoder" (Marko, 26.10.2026)
 
 14. HELP on the E16's screen: encoder 16 turns the pages; a page per knob saying in full words what its turn and its push do; big letters when the text is short; no abbreviations. — **Status:** in work.
+
+> "you can call this preset automation" (Marko, 26.10.2026)
+
+- The first profile is called AUTOMATION. — **Status:** v3.
+
+> "at the top, write the name of the preset, and then the explanation under" (Marko, 26.10.2026)
+
+- Help pages: the preset's name on top, the explanation under it. — **Status:** v3.
+
+> "please make this app two-way communication. If I turn the knob on my hardware, it shows in the app. If I turn down the app, it shows in my hardware. It means I can also turn the knobs in this app and control Ableton Live. Everything is possible, but the actual sender of the commands is my hardware device" / "make this up. Read in row mode. What's going on inside the Ableton? When I'm turning the knob to select the track, it shows me on which track I am. If I'm changing the parameter of utility, it tells me utility is changing what. It has useful information there" (Marko, 26.10.2026)
+
+15. Two-way: a knob turned on the E16 moves in the app, a knob turned in the app (wheel or drag) moves the E16's ring and controls Live the same way. Live read back: the E16's screen says the track it is on, the device and parameter being changed and their value (UTILITY · GAIN · −3.0 dB). — **Status:** in work.
