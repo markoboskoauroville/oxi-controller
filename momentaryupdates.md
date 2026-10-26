@@ -76,4 +76,4 @@
 
 > "everything working, only three doesn't work. I cannot change parameters by selecting them or hovering over them" (Marko, 26.10.2026)
 
-- Test by hand 26.10.2026 (v6): knob 1 (tracks, automation view), knob 3 (scrub, play/stop), knob 16 (help) work; knob 2 HOVER does not change a parameter, neither hovered nor selected. — **Status:** in work.
+- Test by hand 26.10.2026 (v6): knob 1 (tracks, automation view), knob 3 (scrub, play/stop), knob 16 (help) work; knob 2 HOVER does not change a parameter, neither hovered nor selected. — **Status:** v7: knob 2 is SELECTED: the parameter last clicked in Live (Live's own song.view.selected_parameter), read and nudged through two commands added to the local AbletonOSC (view.py; the original kept as view.py.orig-26.10.2026, a copy in tools/AbletonOSC-view.py; reloaded with /live/api/reload, no Live restart). Tested from the Mac: Auto Shift · Vibrato Amt 0 → 16 ct → 0 ct. HOVER (the synthetic drag) stays a role but did not work by hand; the pointer-only way Live offers is the click (selected parameter).
