@@ -164,3 +164,17 @@
 ## 33. 26.10.2026: build the ZOOM and test it in Live
 
 > Please, you run it and test it in Ableton. Turning the knob should change the zoom level on the Ableton arrangement view timeline. feel free to close the session, close the app, and open it again, then open ableton, and let me know if it works
+
+## 34. 26.10.2026: edit the TURN / PUSH text, predictable CC and note numbers, pages instead of scenes
+
+> Please add an edit button next to the description of the knob and the push. It needs to always have 2 categories: turn and push, a turn column and a push column. You fill them in, but the user can overwrite them. This matters especially when the user is using the built-in function of Ableton Live to automatically assign MIDI notes and MIDI CC values to certain functions. It's the so-called MIDI mapping mode, which is very simple. The user presses the button, then presses again, and does the MIDI mapping. You know very well how it is done.
+>
+> Then the user can manually enter what it is doing inside the application. This means our OXI-E16 needs to always be predictable in its CC numbers and note numbers. The first knob will be CC1, and pressing it sets note 1, and so on until we come to 16. When we go to the next page, we go to 17 and so on.
+>
+> Since 1 is reserved for help, the last one in the row, number 16, we need to skip. Please make that. Actually, to be honest with you, I don't need help anymore, because help is already written in this application.
+>
+> We are now using all these knobs, from 1 to 16, across multiple pages. Please make this application on macOS have next page, next page, next page, until we come to the end of all the knobs.
+>
+> We are simplifying the logic of the E16, much more than the manufacturer did in his app. He used scenes and pages. We don't have scenes and pages, we have only pages, until we come to the last page.
+>
+> What is the last page? I don't know. It depends on how many Note and CC numbers are the maximum possible.
