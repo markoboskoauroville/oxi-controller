@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 20
+let VERSION = 21
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -76,13 +76,30 @@ struct Main: View {
             }
             Text(e.status).font(.system(.callout, design: .monospaced))
                 .foregroundStyle(e.connected ? .green : .secondary).fixedSize(horizontal: false, vertical: true)
+            // v21 (Marko, 26.10.2026: "make this application on macOS have next page, next page, next page, until we
+            // come to the end of all the knobs"); on the E16: Shift + knob 16
+            HStack(spacing: 8) {
+                Button("◀ PAGE") { e.goTo(page: e.page - 1) }.disabled(e.page == 0)
+                Text(e.pageLine()).font(.system(.callout, design: .monospaced).bold()).foregroundStyle(orange)
+                Button("PAGE ▶") { e.goTo(page: e.page + 1) }.disabled(e.page == KnobSetup.pageCount - 1)
+                Button("FIRST") { e.goTo(page: 0) }.disabled(e.page == 0)
+            }
             // v15 (Marko, 26.10.2026: "Please make two views: same as an icon view, what is now, or list view")
             Picker("", selection: $view) { Text("KNOBS").tag("knobs"); Text("LIST").tag("list") }
                 .pickerStyle(.segmented).frame(maxWidth: 220)
                 .onChange(of: view) { _, v in UserDefaults.standard.set(v, forKey: "view") }
             HStack(alignment: .top, spacing: 14) {
                 if view == "list" {
-                    ScrollView { VStack(spacing: 6) { ForEach(0..<16, id: \.self) { i in KnobRow(i: i) } } }
+                    ScrollView { VStack(spacing: 6) {
+                        HStack {
+                            Text("TURN").frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+                            Text("PUSH").foregroundStyle(orange).frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+                            Text("KNOB").frame(width: 96, alignment: .leading)
+                            Text("PROMPT").foregroundStyle(noteBlue).frame(minWidth: 160, maxWidth: 240, alignment: .leading)
+                        }
+                        .font(.caption.bold()).padding(.horizontal, 6)
+                        ForEach(0..<16, id: \.self) { i in KnobRow(i: i) }
+                    } }
                         .frame(minWidth: 460)
                 } else {
                     Grid(horizontalSpacing: 8, verticalSpacing: 8) {
@@ -99,7 +116,7 @@ struct Main: View {
                 }
                 .frame(minWidth: 300, maxWidth: 400)
             }
-            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn the knob. Shift on the E16 shows the values on its screen and turns the knobs finer. Knob 16 is HELP: turning it reads a page for every knob on the E16\'s screen, pushing it leaves.")
+            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn or push the knob, and write what it does with ✎. Every knob has its own numbers: knob 1 is CC 1 and note 1, knob 16 is CC 16 and note 16, the next page goes on from 17, channel 1 up to 112, then channel 2. Shift on the E16 shows the values and turns the knobs finer; Shift + knob 16 turns the pages.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
@@ -153,15 +170,14 @@ struct KnobRow: View {
         let span = Double(max(1, k.high - k.low))
         // v17 (Marko, 26.10.2026: "First is the function ... and then there is a knob, and then there is a note")
         HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(e.turnText(i)).font(.callout).fixedSize(horizontal: false, vertical: true)
-                Text(e.pushText(i)).font(.callout).foregroundStyle(orange).fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(minWidth: 260, maxWidth: .infinity, alignment: .leading)
+            // v21 (Marko, 26.10.2026: "an edit button next to the description of the knob and the push ... a turn
+            // column and a push column. You fill them in, but the user can overwrite them")
+            OwnWords(i: i, push: false).frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+            OwnWords(i: i, push: true).frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
             ZStack {
                 Circle().stroke(Color.gray.opacity(0.25), lineWidth: 4)
                 Circle().trim(from: 0, to: (e.values[i] - Double(k.low)) / span).stroke(k.colour, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
-                Text("\(i + 1)").font(.system(.caption, design: .monospaced).bold())
+                Text("\(e.knobs[i].cc)").font(.system(.caption, design: .monospaced).bold())
             }
             .frame(width: 34, height: 34)
             Text(k.name).font(.system(.body, design: .monospaced).bold()).frame(width: 52, alignment: .leading)
@@ -186,17 +202,27 @@ struct Editor: View {
     var body: some View {
         let b = Binding(get: { e.knobs[i] }, set: { e.knobs[i] = $0; e.edited() })
         Form {
-            Section("KNOB \(i + 1)") {
+            Section("KNOB \(i + 1) · PAGE \(e.page + 1) · CC and note \(b.wrappedValue.cc), channel \(b.wrappedValue.channel)") {
                 TextField("Name (4 on the screen)", text: Binding(get: { b.wrappedValue.name }, set: { b.wrappedValue.name = String($0.prefix(4)).uppercased() }))
-                ColorPicker("Colour", selection: Binding(get: { b.wrappedValue.colour }, set: { c in
+            }
+            // v21 (Marko, 26.10.2026: "a color picker with all the available colors, so the user can adjust the color and
+            // the intensity of the ring"): the palette, any colour beside it, and the ring's brightness
+            Section("RING") {
+                RingPalette(knob: b)
+                ColorPicker("Any colour", selection: Binding(get: { b.wrappedValue.colour }, set: { c in
                     let n = NSColor(c).usingColorSpace(.sRGB) ?? .white
                     b.wrappedValue.r = Double(n.redComponent); b.wrappedValue.g = Double(n.greenComponent); b.wrappedValue.b = Double(n.blueComponent)
                 }), supportsOpacity: false)
+                HStack {
+                    Text("Intensity")
+                    Slider(value: Binding(get: { b.wrappedValue.intensity }, set: { b.wrappedValue.intensity = $0 }), in: 0.1...1)
+                    Text("\(Int((b.wrappedValue.intensity * 100).rounded())) %").font(.caption.monospaced()).frame(width: 44)
+                }
+                Circle().fill(b.wrappedValue.colour.opacity(0.25 + 0.75 * b.wrappedValue.intensity)).frame(width: 28, height: 28)
             }
             Section("TURN") {
                 Picker("In Live", selection: b.turnRole) { ForEach(KnobSetup.TurnRole.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
-                Stepper("CC \(b.wrappedValue.cc)", value: b.cc, in: 0...127)
-                Stepper("Channel \(b.wrappedValue.channel)", value: b.channel, in: 1...16)
+                Text("Sends CC \(b.wrappedValue.cc) on channel \(b.wrappedValue.channel)").font(.caption)
                 Stepper("From \(b.wrappedValue.low)", value: b.low, in: 0...126)
                 Stepper("To \(b.wrappedValue.high)", value: b.high, in: 1...127)
                 Picker("Speed", selection: b.speed) { Text("½").tag(0.5); Text("1").tag(1.0); Text("2").tag(2.0); Text("4").tag(4.0) }
@@ -204,9 +230,7 @@ struct Editor: View {
             Section("PUSH") {
                 Picker("In Live", selection: b.pushRole) { ForEach(KnobSetup.PushRole.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Picker("Does", selection: b.push) { ForEach(KnobSetup.Push.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
-                Picker("Sends", selection: b.pushKind) { ForEach(KnobSetup.Kind.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
-                Stepper("\(b.wrappedValue.pushKind.rawValue) \(b.wrappedValue.pushNumber)", value: b.pushNumber, in: 0...127)
-                Stepper("Channel \(b.wrappedValue.pushChannel)", value: b.pushChannel, in: 1...16)
+                Text("Sends note \(b.wrappedValue.pushNumber) on channel \(b.wrappedValue.pushChannel)").font(.caption)
             }
         }
         .formStyle(.grouped)
@@ -241,7 +265,7 @@ struct ChatView: View {
     let i: Int
     @State private var draft = ""
     var body: some View {
-        let turns = e.chats[i] ?? []
+        let turns = e.chats[e.global(i)] ?? []
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("KNOB \(i + 1) · \(e.knobs[i].name)").font(.system(.callout, design: .monospaced).bold())
@@ -257,7 +281,7 @@ struct ChatView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         ForEach(turns) { t in Bubble(t: t, i: i).id(t.id) }
-                        if e.asking == i { Text("Claude is thinking…").font(.caption).foregroundStyle(.secondary).id("wait") }
+                        if e.asking == e.global(i) { Text("Claude is thinking…").font(.caption).foregroundStyle(.secondary).id("wait") }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -357,5 +381,56 @@ struct SettingsView: View {
         p.directoryURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads/API")
         p.message = "Choose the notes that hold your Anthropic keys (other text in them is fine)"
         if p.runModal() == .OK { said = Keys.importFiles(p.urls); Models.resolved = nil; refresh(); resolve() }
+    }
+}
+
+// MARK: - v21: his own words for a turn or a push, and the ring's palette
+
+/// The app's description of a turn or a push, with ✎: his own words replace it (an empty field gives it back).
+struct OwnWords: View {
+    @EnvironmentObject var e: Engine
+    let i: Int
+    let push: Bool
+    @State private var editing = false
+    @State private var draft = ""
+    var body: some View {
+        let own = push ? e.knobs[i].pushLabel : e.knobs[i].turnLabel
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            if editing {
+                TextField(push ? "what the push does" : "what the turn does", text: $draft, axis: .vertical)
+                    .textFieldStyle(.roundedBorder).onSubmit(done)
+                Button("OK", action: done)
+            } else {
+                Text(push ? e.pushText(i) : e.turnText(i)).font(.callout).italic(!own.isEmpty)
+                    .foregroundStyle(push ? orange : Color.primary).fixedSize(horizontal: false, vertical: true)
+                Button { draft = own; editing = true } label: { Image(systemName: "pencil") }
+                    .buttonStyle(.borderless).help(push ? "Write what this push does" : "Write what this turn does")
+            }
+        }
+    }
+    private func done() {
+        let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if push { e.knobs[i].pushLabel = t } else { e.knobs[i].turnLabel = t }
+        editing = false; e.edited(); e.save()
+    }
+}
+
+/// The ring's colours: twelve hues around the wheel, then white, in full; the intensity slider dims them.
+struct RingPalette: View {
+    @Binding var knob: KnobSetup
+    static let colours: [(Double, Double, Double)] = (0..<12).map { h -> (Double, Double, Double) in
+        let c = NSColor(hue: Double(h) / 12, saturation: 1, brightness: 1, alpha: 1).usingColorSpace(.sRGB) ?? .white
+        return (Double(c.redComponent), Double(c.greenComponent), Double(c.blueComponent))
+    } + [(1, 1, 1)]
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(RingPalette.colours.indices, id: \.self) { n in
+                let (r, g, b) = RingPalette.colours[n]
+                let on = abs(knob.r - r) + abs(knob.g - g) + abs(knob.b - b) < 0.05
+                Circle().fill(Color(red: r, green: g, blue: b)).frame(width: 18, height: 18)
+                    .overlay(Circle().stroke(on ? Color.primary : .clear, lineWidth: 2))
+                    .onTapGesture { knob.r = r; knob.g = g; knob.b = b }
+            }
+        }
     }
 }

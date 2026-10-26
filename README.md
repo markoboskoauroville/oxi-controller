@@ -92,6 +92,23 @@ cursor keys, through a handler added to AbletonOSC (`/live/view/zoom_arrangement
 Knob 15 has it. Tested in Live 12.4.6 on "01 Jai Ganesha Pahi Mam": four steps left went from bars 21–121 out to
 1–673, two steps right came back in to about 33–289.
 
+## Pages, fixed numbers, your own words, the ring (v21, 26.10.2026)
+
+- **Fixed numbers.** Knob 1 turns CC 1 and pushes note 1, knob 16 is CC 16 and note 16. Page 2 goes on from 17, and so
+  on. The numbers can no longer be changed; only the ring's colour and intensity, the name and the role can.
+- **The last page.** A MIDI channel has 128 CC and 128 note numbers. CC 0 is bank select, and CC 120–127 are MIDI's
+  channel mode messages (all notes off, reset controllers…), which a knob must never send. So a channel uses 1–112,
+  7 pages of 16. After page 7 the numbers start again from 1 on channel 2, and so on through channel 16:
+  **112 pages, 1,792 knobs.** The window shows the page, its numbers and its channel.
+- **Turning the pages.** ◀ PAGE / PAGE ▶ / FIRST in the window. On the E16, hold Shift and turn knob 16.
+- **No help knob.** Knob 16 is an ordinary knob now (Marko: "help is already written in this application").
+- **TURN and PUSH columns** in the LIST view. The app writes what each one does; ✎ lets you write your own words over
+  it (for example after a MIDI Map in Live: "filter cutoff, Bass"). An empty field gives the app's words back.
+- **The ring.** Under RING: thirteen colours (twelve hues and white), any other colour from the colour picker, and the
+  intensity from 10 to 100 %.
+- Pushes are **momentary** by default: note on when pressed, off when released. Live's MIDI-mapped buttons then flip
+  on every press.
+
 ## Next
 
 1. The app itself (Swift, the camera's rail language): looks and presets on a page, edited live.

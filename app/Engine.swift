@@ -30,8 +30,15 @@ struct KnobSetup: Codable, Equatable {
     var pushRole: PushRole = .midi
     /// v15: Marko's own note for this knob (the LIST view's text field), saved with the setup
     var note: String = ""
+    /// v21 (Marko, 26.10.2026: "an edit button next to the description of the knob and the push ... You fill them in,
+    /// but the user can overwrite them"): his own words for what the turn and the push do (after a MIDI Map in Live);
+    /// empty = the app's own description
+    var turnLabel: String = ""
+    var pushLabel: String = ""
+    /// v21 (Marko, 26.10.2026: "adjust the color and the intensity of the ring"): 0.1...1, the ring's brightness
+    var intensity: Double = 1
 
-    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole, note }
+    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole, note, turnLabel, pushLabel, intensity }
     init(name: String, r: Double, g: Double, b: Double, cc: Int, channel: Int, pushNumber: Int) {
         self.name = name; self.r = r; self.g = g; self.b = b; self.cc = cc; self.channel = channel; self.pushNumber = pushNumber
     }
@@ -45,24 +52,71 @@ struct KnobSetup: Codable, Equatable {
         pushNumber = try c.decode(Int.self, forKey: .pushNumber); pushChannel = try c.decodeIfPresent(Int.self, forKey: .pushChannel) ?? 1
         turnRole = try c.decodeIfPresent(TurnRole.self, forKey: .turnRole) ?? .midi; pushRole = try c.decodeIfPresent(PushRole.self, forKey: .pushRole) ?? .midi
         note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        turnLabel = try c.decodeIfPresent(String.self, forKey: .turnLabel) ?? ""
+        pushLabel = try c.decodeIfPresent(String.self, forKey: .pushLabel) ?? ""
+        intensity = try c.decodeIfPresent(Double.self, forKey: .intensity) ?? 1
     }
 
     var colour: Color { Color(red: r, green: g, blue: b) }
 
-    static func defaults(_ i: Int) -> KnobSetup {
-        let hue = Double(i) / 16
+    // v21 (Marko, 26.10.2026: "our OXI-E16 needs to always be predictable in its CC numbers and note numbers. The first
+    // knob will be CC1, and pressing it sets note 1, and so on until we come to 16. When we go to the next page, we go
+    // to 17 and so on ... we have only pages, until we come to the last page"): knob g (0-based over all pages) turns
+    // CC n and pushes note n, n = 1...112 on a channel, then the next channel. 112, not 127: CC 120-127 are MIDI's
+    // channel mode messages (all notes off, reset ...) and must never come from a knob; CC 0 is bank select. So 7
+    // pages a channel, 16 channels, 112 pages, 1,792 knobs.
+    static let pagesPerChannel = 7
+    static let pageCount = pagesPerChannel * 16
+    static func numbers(_ g: Int) -> (channel: Int, number: Int) { (g / 112 + 1, g % 112 + 1) }
+
+    /// Knob g's numbers put back to the rule, whatever a saved setup said.
+    mutating func number(_ g: Int) {
+        let (ch, n) = KnobSetup.numbers(g)
+        cc = n; channel = ch; pushNumber = n; pushChannel = ch; pushKind = .note
+    }
+
+    static func defaults(_ g: Int) -> KnobSetup {
+        let hue = Double(g % 16) / 16
         let c = NSColor(hue: hue, saturation: 0.9, brightness: 1, alpha: 1).usingColorSpace(.sRGB) ?? .white
-        return KnobSetup(name: "K\(i + 1)", r: Double(c.redComponent), g: Double(c.greenComponent), b: Double(c.blueComponent),
-                         cc: 20 + i, channel: 1, pushNumber: 36 + i)
+        var k = KnobSetup(name: "K\(g + 1)", r: Double(c.redComponent), g: Double(c.greenComponent), b: Double(c.blueComponent),
+                          cc: 1, channel: 1, pushNumber: 1)
+        k.number(g); k.push = .momentary     // momentary: Live's mapped button flips on every press
+        return k
     }
 }
 
-struct Setup: Codable { var name: String; var knobs: [KnobSetup] }
+struct Setup: Codable { var name: String; var knobs: [KnobSetup]; var pages: [[KnobSetup]]? = nil }
 
 final class Engine: ObservableObject {
-    @Published var knobs: [KnobSetup] = (0..<16).map(KnobSetup.defaults)
-    @Published var values: [Double] = Array(repeating: 0, count: 16)
-    @Published var pushed: [Bool] = Array(repeating: false, count: 16)
+    // v21: pages, each sixteen knobs; knobs, values and pushed are the page in front
+    @Published var pages: [[KnobSetup]] = [(0..<16).map(KnobSetup.defaults)]
+    @Published var page = 0
+    @Published var pageValues: [[Double]] = [Array(repeating: 0, count: 16)]
+    @Published var pagePushed: [[Bool]] = [Array(repeating: false, count: 16)]
+    var knobs: [KnobSetup] { get { pages[page] } set { pages[page] = newValue } }
+    var values: [Double] { get { pageValues[page] } set { pageValues[page] = newValue } }
+    var pushed: [Bool] { get { pagePushed[page] } set { pagePushed[page] = newValue } }
+    /// Knob i of this page over all pages (the chat's key, the CC and note numbers).
+    func global(_ i: Int) -> Int { page * 16 + i }
+
+    /// v21: the next or another page; a page never seen is made with its numbers.
+    func goTo(page p: Int) {
+        let p = max(0, min(KnobSetup.pageCount - 1, p))
+        while pages.count <= p {
+            let n = pages.count
+            pages.append((0..<16).map { KnobSetup.defaults(n * 16 + $0) })
+        }
+        while pageValues.count < pages.count { pageValues.append(Array(repeating: 0, count: 16)) }
+        while pagePushed.count < pages.count { pagePushed.append(Array(repeating: false, count: 16)) }
+        page = p; lastTouched = nil; liveSays = ""
+        status = pageLine()
+        drawAll()
+    }
+
+    func pageLine() -> String {
+        let (ch, a) = KnobSetup.numbers(page * 16), b = a + 15
+        return "PAGE \(page + 1) of \(KnobSetup.pageCount) · CC and notes \(a)–\(b) · channel \(ch)"
+    }
     @Published var selected = 0
     @Published var setupName = "MY SETUP"
     @Published var status = "Not connected"
@@ -201,8 +255,8 @@ final class Engine: ObservableObject {
     /// v15 (Marko, 26.10.2026: "write under each of the nodes in the application: what is it doing?"): what a knob's
     /// turn and push do, in a few words, for the window.
     func turnText(_ i: Int) -> String {
-        if i == 15 { return "Turn: help pages on the E16" }
         let k = knobs[i]
+        if !k.turnLabel.isEmpty { return "Turn: " + k.turnLabel }
         switch k.turnRole {
         case .tracks: return "Turn: track up / down (↑ ↓)"
         case .scrub: return "Turn: playhead, a 16th per step (← → by the grid)"
@@ -217,8 +271,8 @@ final class Engine: ObservableObject {
     }
 
     func pushText(_ i: Int) -> String {
-        if i == 15 { return "Push: leave the help" }
         let k = knobs[i]
+        if !k.pushLabel.isEmpty { return "Push: " + k.pushLabel }
         switch k.pushRole {
         case .automationView: return "Push: automation view (A)"
         case .automationRecord: return "Push: automation record on / off (F9)"
@@ -258,9 +312,9 @@ final class Engine: ObservableObject {
     private func heard(_ b: [UInt8]) {
         guard b.count >= 3, !presenting else { return }
         let kind = b[0] & 0xF0
-        // knob sixteen is the help's page knob
-        if kind == 0xB0, b[1] == 16 { let raw = Int(b[2]); helpTurn(raw < 64 ? raw : raw - 128); return }
-        if (kind == 0x90 || kind == 0x80), b[1] == 15 { if kind == 0x90 && b[2] > 0 { leaveHelp() }; return }
+        // v21 (Marko, 26.10.2026: "I don't need help anymore, because help is already written in this application"):
+        // knob sixteen is a knob like the others; with Shift held it turns the pages
+        if kind == 0xB0, b[1] == 16, shift { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
         if helpPage != nil, kind == 0xB0 || (kind == 0x90 && b[2] > 0) { helpPage = nil }
         if kind == 0xB0, (1...16).contains(Int(b[1])) {                   // a turn
             let i = Int(b[1]) - 1
@@ -405,7 +459,7 @@ final class Engine: ObservableObject {
         ringsDue = false
         let rings = (0..<16).map { i -> Ring in
             let k = knobs[i]
-            let lit = k.push == .off || pushed[i] ? 1.0 : 0.35                // a toggled-off knob glows dimmer
+            let lit = (k.push == .off || pushed[i] ? 1.0 : 0.35) * k.intensity  // a toggled-off knob glows dimmer
             let span = Double(max(1, k.high - k.low))
             return Ring(r: Int(k.r * 127 * lit), g: Int(k.g * 127 * lit), b: Int(k.b * 127 * lit),
                         amount: (values[i] - Double(k.low)) / span)
@@ -420,7 +474,7 @@ final class Engine: ObservableObject {
         let title: String
         if let i = lastTouched, knobs[i].turnRole != .midi || knobs[i].pushRole != .midi, !liveSays.isEmpty { title = liveSays }
         else if let i = lastTouched { title = "\(knobs[i].name) \(Int(values[i].rounded()))" + (knobs[i].push != .off && pushed[i] ? " ON" : "") }
-        else { title = setupName }
+        else { title = "\(setupName) P\(page + 1)" }
         let labels = (0..<16).map { shift ? String(Int(values[$0].rounded())) : knobs[$0].name }
         e16.send(E16Message.labels(title: title, labels: labels))
     }
@@ -459,7 +513,7 @@ final class Engine: ObservableObject {
 
     func save() {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try? enc.encode(Setup(name: setupName, knobs: knobs)).write(to: file(setupName))
+        try? enc.encode(Setup(name: setupName, knobs: pages[0], pages: pages)).write(to: file(setupName))
         UserDefaults.standard.set(setupName.uppercased(), forKey: "lastSetup")
         status = "Saved \(setupName.uppercased())"
         objectWillChange.send()
@@ -478,7 +532,11 @@ final class Engine: ObservableObject {
 
     private func apply(_ s: Setup) {
         setupName = s.name
-        knobs = s.knobs.count == 16 ? s.knobs : (0..<16).map { $0 < s.knobs.count ? s.knobs[$0] : KnobSetup.defaults($0) }
+        var ps = s.pages ?? [s.knobs]
+        for p in ps.indices { ps[p] = (0..<16).map { var k = $0 < ps[p].count ? ps[p][$0] : KnobSetup.defaults(p * 16 + $0); k.number(p * 16 + $0); return k } }
+        if ps.isEmpty { ps = [(0..<16).map(KnobSetup.defaults)] }
+        page = 0; pages = ps
+        pageValues = ps.map { _ in Array(repeating: 0, count: 16) }; pagePushed = ps.map { _ in Array(repeating: false, count: 16) }
     }
 
     func edited() { ringsDue = true; drawLabels() }
@@ -491,19 +549,20 @@ final class Engine: ObservableObject {
 
     /// The knob's setup in words, for Claude.
     func currentSetup(_ i: Int) -> String {
-        "knob \(i + 1), named \(knobs[i].name); turn role \(knobs[i].turnRole.rawValue) (\(turnText(i))); push role \(knobs[i].pushRole.rawValue) (\(pushText(i)))"
+        "knob \(i + 1) of page \(page + 1) (CC and note \(knobs[i].cc), channel \(knobs[i].channel)), named \(knobs[i].name); turn role \(knobs[i].turnRole.rawValue) (\(turnText(i))); push role \(knobs[i].pushRole.rawValue) (\(pushText(i)))"
     }
 
     /// Marko's message (the prompt, or a reply in the chat) goes to Claude with the whole conversation of that knob.
     func send(_ text: String, knob i: Int) {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty, asking == nil else { return }
-        chats[i, default: []].append(ChatTurn(fromMarko: true, text: t)); Chats.save(chats)
-        asking = i
-        Chats.ask(history: chats[i] ?? [], current: currentSetup(i)) { [weak self] answer in
+        let g = global(i)
+        chats[g, default: []].append(ChatTurn(fromMarko: true, text: t)); Chats.save(chats)
+        asking = g
+        Chats.ask(history: chats[g] ?? [], current: currentSetup(i)) { [weak self] answer in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.chats[i, default: []].append(answer); Chats.save(self.chats); self.asking = nil
+                self.chats[g, default: []].append(answer); Chats.save(self.chats); self.asking = nil
             }
         }
     }
@@ -512,11 +571,12 @@ final class Engine: ObservableObject {
     func apply(_ turn: ChatTurn, knob i: Int) {
         if let r = turn.turnRole.flatMap(KnobSetup.TurnRole.init(rawValue:)) { knobs[i].turnRole = r }
         if let r = turn.pushRole.flatMap(KnobSetup.PushRole.init(rawValue:)) { knobs[i].pushRole = r }
-        if let n = chats[i]?.firstIndex(where: { $0.id == turn.id }) { chats[i]?[n].applied = true; Chats.save(chats) }
+        let g = global(i)
+        if let n = chats[g]?.firstIndex(where: { $0.id == turn.id }) { chats[g]?[n].applied = true; Chats.save(chats) }
         edited(); save()
     }
 
-    func clearChat(_ i: Int) { chats[i] = []; Chats.save(chats) }
+    func clearChat(_ i: Int) { chats[global(i)] = []; Chats.save(chats) }
 
 
     /// The first profile, AUTOMATION (Marko, 26.10.2026): knob 1 tracks / automation view, knob 2 a parameter's CC
@@ -563,6 +623,7 @@ final class Engine: ObservableObject {
         k[3].name = "PARM"; k[3].turnRole = .paramStep; k[3].pushRole = .statusLine; (k[3].r, k[3].g, k[3].b) = (1, 0.85, 0.2)
         k[4].name = "PTCH"; k[4].turnRole = .clipPitch; k[4].pushRole = .pitchZero; (k[4].r, k[4].g, k[4].b) = (0.9, 0.3, 0.9)
         k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
+        page = 0
         knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)
         save(); drawAll()
     }
