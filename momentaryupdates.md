@@ -51,3 +51,7 @@
 > "I give you a trial setup so you can try it inside Ableton Live. The first profile should work like this: - The upper-left knob is turning and selecting tracks up or down. - Pressing on that knob opens the channel automation lane. - The second button exchanges the automation parameter, and pressing it creates the key frame in the automation line. - The third button is scrubbing the timeline. When I press it, it's stop/play. We need to use MIDI protocol. Let's test this kind of setup" (Marko, 26.10.2026)
 
 13. The first profile, LIVE AUTOMATION: knob 1 turn = select the track up/down, push = open its automation lane; knob 2 turn = the next/previous automation parameter, push = a breakpoint (key frame) on the automation line; knob 3 turn = scrub the timeline, push = play/stop. Over MIDI. — **Status:** in work.
+
+> "otherwise, on the matrix screen, you need to describe what parameters are doing, what knobs are doing, and to scroll between pages. There is a page scroller for help files. If there is not enough text, you need to actually write big text. No shortcuts. Everything needs to be explained. Help page. I'm scrolling with the 16 encoder" (Marko, 26.10.2026)
+
+14. HELP on the E16's screen: encoder 16 turns the pages; a page per knob saying in full words what its turn and its push do; big letters when the text is short; no abbreviations. — **Status:** in work.
