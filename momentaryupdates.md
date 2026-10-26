@@ -104,3 +104,7 @@
 > "I did turn the knob. I selected its frequency in EQ8, and then I was expecting that with the four, I'm going to go to another parameter, but it didn't happen" (Marko, 26.10.2026)
 
 - Why: Live hands out a new Python wrapper at every access, so `live is not self._dj_seen` was always true and the pointer was reset at every step. Fixed: Live objects compared by `_live_ptr`. Tested: EQ Eight 3 Frequency A → 3 Gain A (28/84) → 3 Q A → 3 Filter On B → back; the read follows. Lesson in LESSONS.md.
+
+> "it is jumping between parameters, but I have also a visual indication on the screen which stays locked. If you take a screenshot, you will see there is a square around frequency. I am expecting that when I turn the number 4, this square is jumping. Where am I" (Marko, 26.10.2026)
+
+21. Where am I in Live: Live's square marks the clicked parameter and no script can move it (selected_parameter is read-only); so every step of knob 4 and turn of knob 2 is written in Live's status bar: ► DEVICE · parameter · value · n/N. — **Status:** done (AbletonOSC view.py, self.manager.show_message on every step and nudge); seen in Live: "▶ EQ Eight · 3 Filter Type A · Low Pass 12dB · 26/84 (OXI E16 knob 4; knob 2 turns it)".

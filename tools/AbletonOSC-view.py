@@ -81,7 +81,10 @@ class ViewHandler(AbletonOSCHandler):
             n = int(params[0]) if params else 1
             self._dj_param = plist[max(0, min(len(plist) - 1, i + (1 if n > 0 else -1)))]
             p, info = selected_parameter_info()
-            return info + ("%d/%d" % (keys.index(key(p)) + 1 if key(p) in keys else 0, len(plist)),)
+            where = "%d/%d" % (keys.index(key(p)) + 1 if key(p) in keys else 0, len(plist))
+            # Live's square stays on the clicked parameter (no script can move it): Live's status bar says where knob 4 is
+            self.manager.show_message("\u25b6 %s \u00b7 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 4; knob 2 turns it)" % (info[0], info[1], info[2], where))
+            return info + (where,)
 
         self.osc_server.add_handler("/live/view/step_parameter", step_parameter)
 
@@ -95,7 +98,9 @@ class ViewHandler(AbletonOSCHandler):
             else:
                 v = p.value + (p.max - p.min) / 127.0 * step
             p.value = max(p.min, min(p.max, v))
-            return selected_parameter_info()[1]
+            info = selected_parameter_info()[1]
+            self.manager.show_message("\u25b6 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 2)" % info)
+            return info
 
         # DJ Mantra Ableton Remote (26.10.2026, Marko: "make a special case for pitch sliders"): the pitch of the clip in
         # Clip View (song.view.detail_clip), Transpose and Detune as one number of cents
