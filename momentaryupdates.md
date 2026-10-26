@@ -206,3 +206,15 @@
 ## 38. 26.10.2026: profiles placed on pages
 
 > this app can define the span of pages. I don't know how to call it. You help me. We have automation now. We save it. We recall it. Profile, yes. Each profile can be assigned to the range of pages. Instead of recalling the presets, I can store them on the page, and then by turning the page and naming the page, I can directly do everything from my device, not using the DJ Mantra Ableton Remote for Oxi E16 version 23 or more versions. Please make this possible in the setting of each profile, so that I can assign it the fixed page inside the device
+
+## Status of 29–38 at the close of the session (26.10.2026)
+
+- **29, 30** (prompt, Settings): **done, v18.** The note field is the prompt; Settings has the key file picker, the fallback order and the model family. Tested from the Terminal (`--import`, `--ask`) on Haiku, Sonnet and Opus. Opus is the default, about 1.5 cents a question.
+- **31** (public repository, README, "impossible", chat): **done, v18–v19.** The repository is public; the history was scanned first and no key was found. Each knob has a chat with four verdicts: possible, partly, buildable (NOT YET · CAN BE BUILT) and impossible.
+- **32** (zoom is not impossible): **done, v19.** The system prompt now lists the routes the app can be extended through: AbletonOSC, Mackie Control, shortcuts and MIDI Map.
+- **33** (ZOOM in Live): **done, v20**, on knob 15. Tested in Live: four steps left went from bars 21–121 out to 1–673, and two steps right zoomed back in.
+- **34** (TURN/PUSH columns, fixed numbers, pages): **done, v21.** Knob n sends CC n and note n; the next page starts at 17. Each channel holds 112 numbers (7 pages), across 16 channels, which makes 112 pages. Help is gone.
+- **35** (ring colour and intensity): **done, v21**, with 13 palette colours, a colour picker and an intensity slider. Marko has not yet checked them by eye.
+- **36** (two lines a knob, no title): **done, v22.** The app draws the screen itself, and Live's answers show big for 2 s. The page cross was **replaced in v23**.
+- **37** (direct page access): **done, v23.** Tap Shift twice to enter: knob 16 turns the pages, pushes 1–15 jump to a page, and Shift twice exits. Seen on the E16 through the Mantra Manual Camera.
+- **38** (profiles on pages): **done, v24.** PROFILES… → PLACE puts a profile on a page; page names are kept in layout.json, which is loaded at start. Seen on the E16: P1 and P5 named AUTOM. Marko still has to try it with his own hand.
