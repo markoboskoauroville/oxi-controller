@@ -37,3 +37,5 @@
 > "can you name this project DJ Mantra Ableton Remote for Oxi E16? And please write the name of the app on the matrix screen when we boot up, so it's with signature" (Marko, 26.10.2026)
 
 10. The project is called DJ MANTRA ABLETON REMOTE for OXI E16; its name shown on the E16's screen at every start, a signature. — **Status:** asked.
+
+- 26.10.2026: OXI asked for developer access (the .oxie16 format, the full Remote Mode spec, any E16 editor source, firmware plans): email sent from marko.bosko@gmail.com to support@oxiinstruments.com (the address on oxiinstruments.com/contact) on Marko's yes. GitHub before that: OXI's E16 app is closed (OXI-Desktop-APP holds only a README); open: oxi_midi_import (MIT, Dart), OXIWave (GPL, Coral); community: charlesvestal/oxi-e16-lua (MIT, Lua, glyphs, field notes), buba447/OXI-E16-Patcher and brentvatne/oxi-e16-config (scene files, no license).
