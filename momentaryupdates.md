@@ -198,3 +198,7 @@
 > Is there something more useful for navigation? You can invent it. Maybe I can turn the middle knob to go back and forth.
 >
 > Or maybe you can paint a cross with the light, so we have 2 middle lines going down and 2 middle lines going left and right, like we have one row and one column. All buttons on the left side are the left arrow, all buttons on the right side are the right arrow, all buttons above the middle are the up arrow, and all buttons below the middle are the down arrow. The 4 in the middle are for turning, instead of pressing. to see how the controller looks, please use my mantra camera, the mantra manual camera, not iriun
+
+## 37. 26.10.2026: pages by direct access, not by arrows
+
+> lllllllnow the camera is fixed. You can continue developing. I don't like this way of navigating the pages. It must be direct access to the page number. The last button in the row number 16 is turning to change the pages, and each button press is jumping to the certain page. It's like turning and pressing. To access the page, scrolling is again the same: double-click to enter and double-click to exit the Shift key
