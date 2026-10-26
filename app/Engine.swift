@@ -583,9 +583,11 @@ final class Engine: ObservableObject {
     private func flushRings() {
         guard ringsDue, connected, !presenting, let e16 else { return }
         ringsDue = false
-        if navMode {   // v23: the page you are on white, pages in use orange, the rest dark; knob 16 orange, turning
+        if navMode {   // v23: the page you are on white, pages in use orange, the rest dark
             e16.send(E16Message.rings((0..<16).map { i in
-                if i == 15 { return Ring(r: 127, g: 60, b: 0, amount: 1) }
+                // v25: knob 16 is the page turner, red so it stands out (Marko, 26.10.2026: "Page turners should be
+                // colored red, not yellow, as all the others are there, so it's kind of emphasized")
+                if i == 15 { return Ring(r: 127, g: 0, b: 0, amount: 1) }
                 let p = bankStart + i
                 if p == page { return Ring(r: 120, g: 120, b: 120, amount: 1) }
                 if p <= lastPage { return Ring(r: 127, g: 60, b: 0, amount: 0.35) }
@@ -618,7 +620,7 @@ final class Engine: ObservableObject {
         e16.send(E16Message.framebuffer(Screen.grid(cells, touched: lastTouched)))
     }
 
-    // MARK: v23, the page picker (Marko, 26.10.2026: "It must be direct access to the page number. The last button in
+    // MARK: v23, the page turner (named by Marko on 26.10.2026; v23 called it the page picker) (Marko, 26.10.2026: "It must be direct access to the page number. The last button in
     // the row number 16 is turning to change the pages, and each button press is jumping to the certain page. It's like
     // turning and pressing ... double-click to enter and double-click to exit the Shift key"). Replaces v22's cross.
     //   knobs 1-15: pushed, the page they show (15 pages at a time: 1-15, 16-30 ...); lit, the pages in use, white
@@ -636,7 +638,7 @@ final class Engine: ObservableObject {
 
     func setNav(_ on: Bool) {
         navMode = on; lastTouched = nil
-        status = on ? "PAGES: push knobs 1-15 for a page, turn knob 16 for the next or the one before; tap Shift twice to leave" : pageLine()
+        status = on ? "PAGE TURNER: turn knob 16 (red) for the next page or the one before, push knobs 1-15 for a page; tap Shift twice to leave" : pageLine()
         drawAll()
         if !on { showLive("P\(page + 1) " + (pageName(page).isEmpty ? "" : pageName(page))) }
     }

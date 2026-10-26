@@ -228,3 +228,5 @@
 ## 40. 26.10.2026: the page turner is red
 
 > I can confirm Double Shift is actually calling the page turner. Let's call it the page turner. Page turners should be colored red, not yellow, as all the others are there, so it's kind of emphasized By page turner, I mean encoder number 16, which turns from page to page.
+
+**Status:** done, v25. Knob 16 is red while the page turner is open (it was orange); the status line says PAGE TURNER. Seen on the E16 through the Mantra Manual Camera: knob 16 red; turning it went from P1 to P2; pushing knob 5 jumped to P5; Shift twice left, and the AUTOMATION profile was on P5 with CC 65-80; back to page 1 afterwards.
