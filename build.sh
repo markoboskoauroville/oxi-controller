@@ -8,12 +8,21 @@ NAME="DJ Mantra Ableton Remote"
 APP="build/$NAME.app"
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O -swift-version 5 -parse-as-library -o "$APP/Contents/MacOS/DJMantraAbletonRemote" app/*.swift Sources/E16/*.swift
+# the icon carries the version (version-visible.md): drawn again at every build
+(cd icon && swift make_icon.swift "$V" >/dev/null)
+I=build/AppIcon.iconset; rm -rf $I; mkdir -p $I
+for s in 16 32 128 256 512; do
+  sips -z $s $s icon/icon_1024.png --out $I/icon_${s}x${s}.png >/dev/null
+  sips -z $((s*2)) $((s*2)) icon/icon_1024.png --out $I/icon_${s}x${s}@2x.png >/dev/null
+done
+iconutil -c icns $I -o "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<PL
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleName</key><string>$NAME</string>
 <key>CFBundleDisplayName</key><string>$NAME</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleIdentifier</key><string>community.auroville.djmantraabletonremote</string>
 <key>CFBundleExecutable</key><string>DJMantraAbletonRemote</string>
 <key>CFBundlePackageType</key><string>APPL</string>
