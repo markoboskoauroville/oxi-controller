@@ -224,3 +224,7 @@
 > come on, make my Oxi application part of the Start Menu and put it in the Application folder. When I type "Oxi" to search, beside the original app, this one must come up
 
 **Status:** done. The app is now "DJ Mantra Ableton Remote for OXI E16 (Mantra).app" in /Applications (the old name is removed, the bundle id is unchanged, the data in Application Support is unchanged). Spotlight "oxi" finds it beside "OXI App" (checked with mdfind). build/ has .metadata_never_index, so the build copy is not listed. The star has a row for it in Ableton Live (STAR_SWIFT rows.json).
+
+## 40. 26.10.2026: the page turner is red
+
+> I can confirm Double Shift is actually calling the page turner. Let's call it the page turner. Page turners should be colored red, not yellow, as all the others are there, so it's kind of emphasized By page turner, I mean encoder number 16, which turns from page to page.
