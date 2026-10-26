@@ -23,3 +23,9 @@
 > "m key is also very important to control because it can control parts of Ableton Live, which otherwise we cannot control. M key from the protocol: we already work with it" (Marko, 26.10.2026; read as MACKIE, the Mackie Control protocol of ~/Developer/MANTRA_MACKIE)
 
 7. Mackie Control too: Oxi Controller speaks the Mackie protocol to Live (MANTRA_MACKIE already does, through IAC to Live's MackieControl), for the parts of Live that nothing else reaches. — **Status:** asked, with 6.
+
+> "please search other rappers which already work with E16, if there are any, and learn from their experience" (Marko, 26.10.2026; "rappers" read as repositories, then:)
+>
+> "Amen. Repro. Repro. Repro. Repro. No triper" (Marko, 26.10.2026, dictated: "repo", repositories)
+
+8. Other people's repositories that already work with the E16 (charlesvestal/schwung, charlesvestal/oxi-e16-lua and whatever else exists), read for what they learned. — **Status:** in the research (RESEARCH.md).
