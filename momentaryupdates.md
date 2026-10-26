@@ -88,3 +88,7 @@
 
 > "It works smooth now, but the pitch is not reacting at all to these changes. Then I can do pitch manually, no problem" (Marko, 26.10.2026)
 - Why: the pitch knob clicked is not a device parameter (a clip's Transpose/Detune in Clip View): Live's selected_parameter stayed EQ Eight · 3 Frequency A (749 Hz), so knob 2 kept turning that. Possible later: a CLIP PITCH role (the selected clip's pitch_coarse/pitch_fine, which Live's API can set). Marko: pitch by hand is fine for now.
+
+> "yes, make a special case for pitch sliders" (Marko, 26.10.2026)
+
+19. CLIP PITCH: a knob for the pitch of the clip in Clip View (Transpose and Detune), in cents. — **Status:** v10: AUTOMATION knob 4 PTCH: turn 5 ct a step (Shift 1 ct), Transpose ±48 st and Detune carried as one number of cents (AbletonOSC /live/view/get/clip_pitch, /live/view/nudge_clip_pitch on song.view.detail_clip; audio clips only, a MIDI clip says it has no pitch); push = back to 0 st 0 ct; the ring follows the clip's pitch; the screen: CLIP · +3 st +12 ct. Tested: the command answers (no clip in Clip View at that moment); by hand not yet.

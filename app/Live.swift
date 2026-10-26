@@ -199,6 +199,20 @@ final class Live {
         return "\(dev.uppercased()) · \(name) · \(value)"
     }
 
+    // MARK: CLIP PITCH (v10, Marko, 26.10.2026: "make a special case for pitch sliders"): the clip in Clip View, its
+    // Transpose and Detune as cents, through /live/view/get/clip_pitch and /live/view/nudge_clip_pitch (AbletonOSC)
+
+    func clipPitch() -> (clip: String, text: String, cents: Double)? {
+        guard let a = ask("/live/view/get/clip_pitch", ms: 300), a.count >= 3, let c = a[0] as? String,
+              let t = a[1] as? String, let v = a[2] as? Double else { return nil }
+        return (c, t, v)
+    }
+
+    func nudgeClipPitch(cents: Double) -> String {
+        guard let a = ask("/live/view/nudge_clip_pitch", cents, ms: 600), a.count >= 2, let c = a[0] as? String, let t = a[1] as? String else { return "— Live does not answer" }
+        return c.isEmpty ? t : "\(c.uppercased()) · \(t)"
+    }
+
     // MARK: HOVER (Marko, 26.10.2026: "I just simply cover any knob in Ableton, and when I turn the knob in my hardware,
     // it turns that knob. In hovering mode")
 

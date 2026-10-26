@@ -14,8 +14,8 @@ struct KnobSetup: Codable, Equatable {
     enum Push: String, Codable, CaseIterable { case off = "OFF", toggle = "TOGGLE", momentary = "MOMENTARY" }
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
     /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
-    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED" }
-    enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP" }
+    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH" }
+    enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP", pitchZero = "PITCH TO ZERO" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
     var cc: Int                                 // what a turn sends
@@ -132,6 +132,7 @@ final class Engine: ObservableObject {
             switch k.turnRole {
             case .tracks: turn = "Turning selects the track above or below in Live's arrangement."
             case .scrub: turn = "Turning moves the playhead along the timeline, a sixteenth note for every step. Hold Shift for finer steps."
+            case .clipPitch: turn = "Turning changes the pitch of the audio clip shown in Clip View, five cents a step, Transpose and Detune together. Hold Shift for single cents. The screen shows the semitones and cents."
             case .selected: turn = "Turning changes the parameter you last clicked in Live, any knob, slider or button of any device or of the mixer. The screen names the device, the parameter and its value. Hold Shift for fine steps. With automation recording on, the turns are written as key frames."
             case .hover: turn = "Hover mode: rest the mouse pointer on any knob, slider or number in Live, and turning this knob turns that control, as dragging it with the mouse would. Hold Shift for fine steps. Do not rest the pointer on a clip: the same drag would move it."
             case .parameter: turn = "Turning chooses which parameter of the selected track's device is automated; the screen names the device, the parameter and its value. Turning with Shift held changes that value in Live."
@@ -142,6 +143,7 @@ final class Engine: ObservableObject {
             case .automationView: push = "Pushing shows or hides the automation lanes of the tracks in Live's arrangement."
             case .automationRecord: push = "Pushing switches automation recording on or off. While it is on, turning a mapped knob writes key frames into the automation line."
             case .playStop: push = "Pushing starts Live playing, or stops it."
+            case .pitchZero: push = "Pushing sets the clip's pitch back to zero semitones and zero cents."
             case .midi:
                 switch k.push {
                 case .off: push = "Pushing does nothing."
@@ -218,6 +220,11 @@ final class Engine: ObservableObject {
                 DispatchQueue.main.async { self.showLive(said ?? "— Live does not answer") }
             }
             return
+        case .clipPitch:
+            lastTouched = i; selected = i
+            let cents = step * k.speed * (shift ? 1 : 5)
+            DispatchQueue.global().async { let said = Live.shared.nudgeClipPitch(cents: cents); DispatchQueue.main.async { self.showLive(said) } }
+            return
         case .selected:
             // v7: the parameter last clicked in Live (Live.nudgeSelected); Shift = fine
             lastTouched = i; selected = i
@@ -264,6 +271,7 @@ final class Engine: ObservableObject {
                 case .automationView: said = Live.shared.automationView() ? "AUTOMATION VIEW (A)" : "— Live is not open"
                 case .automationRecord: said = Live.shared.automationRecord().map { $0 ? "AUTOMATION RECORD ON" : "RECORD OFF" } ?? "— Live does not answer"
                 case .playStop: said = Live.shared.playStop().map { $0 ? "PLAY" : "STOP" } ?? "— Live does not answer"
+                case .pitchZero: said = Live.shared.clipPitch().map { Live.shared.nudgeClipPitch(cents: -$0.cents) } ?? "— Live does not answer"
                 case .midi: said = ""
                 }
                 DispatchQueue.main.async { self.live(said) }
@@ -382,6 +390,17 @@ final class Engine: ObservableObject {
     private var lastSelectedName = ""
 
     private func followSelected() {
+        // v10: the CLIP PITCH knob's ring follows the clip's pitch (−48…+48 semitones across the ring)
+        if connected, !presenting, let j = knobs.firstIndex(where: { $0.turnRole == .clipPitch }) {
+            DispatchQueue.global().async {
+                guard let p = Live.shared.clipPitch() else { return }
+                DispatchQueue.main.async {
+                    let k = self.knobs[j]
+                    let v = Double(k.low) + (p.cents + 4800) / 9600 * Double(k.high - k.low)
+                    if abs(v - self.values[j]) > 0.1 { self.values[j] = v; self.ringsDue = true }
+                }
+            }
+        }
         guard connected, !presenting, !following, let i = knobs.firstIndex(where: { $0.turnRole == .selected }) else { return }
         following = true
         DispatchQueue.global().async {
@@ -406,6 +425,7 @@ final class Engine: ObservableObject {
         var k = (0..<16).map(KnobSetup.defaults)
         k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
         k[1].name = "AUTO"; k[1].turnRole = .selected; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
+        k[3].name = "PTCH"; k[3].turnRole = .clipPitch; k[3].pushRole = .pitchZero; (k[3].r, k[3].g, k[3].b) = (0.9, 0.3, 0.9)
         k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
         knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)
         save(); drawAll()
