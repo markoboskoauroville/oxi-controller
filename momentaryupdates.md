@@ -39,3 +39,7 @@
 10. The project is called DJ MANTRA ABLETON REMOTE for OXI E16; its name shown on the E16's screen at every start, a signature. — **Status:** asked.
 
 - 26.10.2026: OXI asked for developer access (the .oxie16 format, the full Remote Mode spec, any E16 editor source, firmware plans): email sent from marko.bosko@gmail.com to support@oxiinstruments.com (the address on oxiinstruments.com/contact) on Marko's yes. GitHub before that: OXI's E16 app is closed (OXI-Desktop-APP holds only a README); open: oxi_midi_import (MIT, Dart), OXIWave (GPL, Coral); community: charlesvestal/oxi-e16-lua (MIT, Lua, glyphs, field notes), buba447/OXI-E16-Patcher and brentvatne/oxi-e16-config (scene files, no license).
+
+> "Please also ask them to add to explain how to. Update firmware for Oxi over our app. We can use also update the firmware. Why not?" (Marko, 26.10.2026)
+
+11. Firmware updates of the E16 from our app; OXI asked how (the update protocol, the firmware files). — **Status:** follow-up email drafted.
