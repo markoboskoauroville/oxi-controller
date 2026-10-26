@@ -91,8 +91,12 @@
 
 > "yes, make a special case for pitch sliders" (Marko, 26.10.2026)
 
-19. CLIP PITCH: a knob for the pitch of the clip in Clip View (Transpose and Detune), in cents. — **Status:** v10: AUTOMATION knob 4 PTCH: turn 5 ct a step (Shift 1 ct), Transpose ±48 st and Detune carried as one number of cents (AbletonOSC /live/view/get/clip_pitch, /live/view/nudge_clip_pitch on song.view.detail_clip; audio clips only, a MIDI clip says it has no pitch); push = back to 0 st 0 ct; the ring follows the clip's pitch; the screen: CLIP · +3 st +12 ct. Tested: the command answers (no clip in Clip View at that moment); by hand not yet.
+19. CLIP PITCH: a knob for the pitch of the clip in Clip View (Transpose and Detune), in cents. — **Status:** v10: AUTOMATION knob 4 PTCH: turn 5 ct a step (Shift 1 ct), Transpose ±48 st and Detune carried as one number of cents (AbletonOSC /live/view/get/clip_pitch, /live/view/nudge_clip_pitch on song.view.detail_clip; audio clips only, a MIDI clip says it has no pitch); push = back to 0 st 0 ct; the ring follows the clip's pitch; the screen: CLIP · +3 st +12 ct. Tested by Marko 26.10.2026: works (turn and reset).
 
 > "I think number 4 encoder is not used. We can use it to scroll through the parameters. For example, I'm in a plugin. I select one parameter, and then with this one, I'm jumping to other parameters" (Marko, 26.10.2026)
 
 20. Knob 4 steps through the parameters of the device of the clicked parameter; knob 2 turns the one stepped to; a new click in Live starts from there. CLIP PITCH moves to knob 5. — **Status:** v11: AbletonOSC /live/view/step_parameter (Live's selected_parameter cannot be set, so the script keeps its own pointer, reset when Live's selection changes); AUTOMATION knob 4 PARM (turn: next/previous parameter, the screen: DEVICE · name · value · n/N), knob 2 turns it, knob 5 PTCH. Reloaded; not yet tested: nothing was selected in Live at that moment.
+
+> "yes, knob for work in a clip view fantastic. It resets when I press, and I can change the pitch by turning the knob" (Marko, 26.10.2026)
+
+- CLIP PITCH confirmed by hand 26.10.2026: turning changes the clip's pitch in Clip View, a push resets it to zero.
