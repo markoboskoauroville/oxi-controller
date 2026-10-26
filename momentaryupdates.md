@@ -81,3 +81,7 @@
 > "please also build in that our device is reading selected parameters, in the sense that it shows the value with an LED. If I'm turning the LED, I can see the value. If I click on other parameters, the value is read from that parameter" (Marko, 26.10.2026)
 
 17. The SELECTED knob's ring shows the selected parameter's value, read from Live (also when another parameter is clicked). — **Status:** v8: Live is asked every 0.3 s (/live/view/get/selected_parameter); the knob's value and ring follow (seen: a nudge of +40 from the Mac → AUTO 40 in the app); another parameter clicked → its device, name and value on the E16's screen.
+
+> "yes, it works only for some reason. The pitch was not going smoothly. I guess that's some other issue. There's a pitch-specific knob in Ableton. Does it make sense to use some better protocol than MIDI to control the knobs? Maybe 127 steps is not fine enough. I don't know. Is there another protocol that goes beyond 127 steps Can we apply this to our device? More high resolution and more precision." (Marko, 26.10.2026)
+
+18. Finer than 127 steps for the SELECTED knob. — **Status:** v9: the path is not MIDI-bound (E16 → app relative steps, app → Live a float over OSC); the 1/127 per click was ours. Now a click = 1/508 of the range, Shift 1/2540; the E16's acceleration still covers the range on a fast spin. Quantized parameters (whole semitones …) still move a step at a time: Live's own. 14-bit CC / NRPN not needed on this path.

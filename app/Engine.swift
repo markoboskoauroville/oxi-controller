@@ -221,7 +221,11 @@ final class Engine: ObservableObject {
         case .selected:
             // v7: the parameter last clicked in Live (Live.nudgeSelected); Shift = fine
             lastTouched = i; selected = i
-            let st = step * k.speed * (shift ? 0.25 : 1)
+            // v9 (Marko, 26.10.2026: "Maybe 127 steps is not fine enough ... More high resolution and more
+            // precision"): Live takes the value as a float over OSC, so the step is ours: a click 1/508 of the range
+            // (Live's nudge counts 1/127 per unit), with Shift 1/2540; a fast spin still covers the range, as the E16
+            // sends larger steps when turned fast
+            let st = step * k.speed * (shift ? 0.05 : 0.25)
             DispatchQueue.global().async { let said = Live.shared.nudgeSelected(by: st); DispatchQueue.main.async { self.showLive(said) } }
             return
         case .hover:
