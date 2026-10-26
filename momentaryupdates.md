@@ -85,3 +85,6 @@
 > "yes, it works only for some reason. The pitch was not going smoothly. I guess that's some other issue. There's a pitch-specific knob in Ableton. Does it make sense to use some better protocol than MIDI to control the knobs? Maybe 127 steps is not fine enough. I don't know. Is there another protocol that goes beyond 127 steps Can we apply this to our device? More high resolution and more precision." (Marko, 26.10.2026)
 
 18. Finer than 127 steps for the SELECTED knob. — **Status:** v9: the path is not MIDI-bound (E16 → app relative steps, app → Live a float over OSC); the 1/127 per click was ours. Now a click = 1/508 of the range, Shift 1/2540; the E16's acceleration still covers the range on a fast spin. Quantized parameters (whole semitones …) still move a step at a time: Live's own. 14-bit CC / NRPN not needed on this path.
+
+> "It works smooth now, but the pitch is not reacting at all to these changes. Then I can do pitch manually, no problem" (Marko, 26.10.2026)
+- Why: the pitch knob clicked is not a device parameter (a clip's Transpose/Detune in Clip View): Live's selected_parameter stayed EQ Eight · 3 Frequency A (749 Hz), so knob 2 kept turning that. Possible later: a CLIP PITCH role (the selected clip's pitch_coarse/pitch_fine, which Live's API can set). Marko: pitch by hand is fine for now.
