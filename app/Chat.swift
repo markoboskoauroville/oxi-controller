@@ -45,6 +45,7 @@ enum Chats {
         .selected: "changes the parameter last clicked in Live, fine steps (1/508), any device or mixer control",
         .clipPitch: "changes the pitch of the audio clip in Clip View, 5 cents a step",
         .paramStep: "steps to the next or previous parameter of the clicked device",
+        .zoom: "zooms the arrangement timeline in or out (Live's zoom_view, as + and -)",
     ]
     static let pushSentence: [KnobSetup.PushRole: String] = [
         .midi: "sends a MIDI note or CC (off / toggle / momentary)",

@@ -52,6 +52,16 @@ final class Live {
             sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
     }
 
+    /// Straight to AbletonOSC on 11000, past the router: for a command that needs no answer, so it works whoever holds
+    /// 11001 (v20, 26.10.2026: the star's a1_ears.py took 11001 when Live started, A1's router never came up, and the
+    /// zoom went nowhere). The answer, if any, goes to 11001's holder; this app does not wait for it.
+    func sendDirect(_ address: String, _ args: Any...) {
+        let d = Live.message(address, args)
+        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11000).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
+        _ = d.withUnsafeBytes { b in withUnsafePointer(to: &to) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+            sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
+    }
+
     private func listen() {
         var buf = [UInt8](repeating: 0, count: 65536)
         while true {
@@ -220,6 +230,12 @@ final class Live {
     func nudgeClipPitch(cents: Double) -> String {
         guard let a = ask("/live/view/nudge_clip_pitch", cents, ms: 600), a.count >= 2, let c = a[0] as? String, let t = a[1] as? String else { return "— Live does not answer" }
         return c.isEmpty ? t : "\(c.uppercased()) · \(t)"
+    }
+
+    /// v20: the arrangement's timeline zoomed by Live's own zoom_view (/live/view/zoom_arrangement, AbletonOSC); + in
+    func zoomArrangement(_ steps: Int) -> String {
+        sendDirect("/live/view/zoom_arrangement", steps)
+        return steps > 0 ? "ZOOM IN" : "ZOOM OUT"
     }
 
     /// v12: Live's status line (knob 4's and knob 2's place) off or on; nil: toggle. Returns whether it is on.

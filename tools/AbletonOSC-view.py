@@ -188,6 +188,21 @@ class ViewHandler(AbletonOSCHandler):
             clip.pitch_fine = max(-50, min(49, fine))
             return clip_pitch_info(clip)
 
+        # DJ Mantra Ableton Remote v20 (26.10.2026, Marko: "Turning the knob should change the zoom level on the
+        # Ableton arrangement view timeline"): Application.View.zoom_view, the call Live's own Mackie Control script
+        # makes for Zoom + the cursor keys; right/left zoom the timeline (time), steps = how many clicks, + in, - out
+        def zoom_arrangement(params: Optional[Tuple] = ()):
+            import Live
+            view = Live.Application.get_application().view
+            nav = Live.Application.Application.View.NavDirection
+            steps = int(params[0]) if params else 1
+            if not view.is_view_visible("Arranger"):
+                view.show_view("Arranger")
+            for _ in range(min(8, abs(steps))):
+                view.zoom_view(nav.right if steps > 0 else nav.left, "Arranger", False)
+            return (steps,)
+
+        self.osc_server.add_handler("/live/view/zoom_arrangement", zoom_arrangement)
         self.osc_server.add_handler("/live/view/get/clip_pitch", get_clip_pitch)
         self.osc_server.add_handler("/live/view/nudge_clip_pitch", nudge_clip_pitch)
         self.osc_server.add_handler("/live/view/get/selected_parameter", get_selected_parameter)

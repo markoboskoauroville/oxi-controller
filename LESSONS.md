@@ -20,3 +20,12 @@ recognised", the knobs did nothing in the app), while the device itself worked. 
 `song.view.selected_parameter` returns a fresh wrapper each time: `a is b` is false for the same parameter, and
 `list.index()` may miss it. Tell Live objects apart by `_live_ptr` (the C++ object behind the wrapper). Found when
 knob 4's parameter pointer was reset at every step.
+
+## 26.10.2026: when Live starts, whoever takes UDP 11001 first decides whether the router exists
+
+Live was opened again for the ZOOM test. The star's `MANTRA_STAR/a1_ears.py` (started by Hammerspoon) took 11001
+before Ableton Live Actions did, so A1's router on 11002 never came up. Every call this app sent to 11002 went
+nowhere, and Live's log showed nothing. A command that needs no answer (ZOOM) now goes straight to AbletonOSC on
+11000 (`Live.sendDirect`). The roles that read an answer (SELECTED, CLIP PITCH, PARAMETER STEP, the status line)
+still need the router, so they need Live Actions' A1 to hold 11001. Test first: `lsof -nP -iUDP | grep 1100`
+should show the router listening on 11002.

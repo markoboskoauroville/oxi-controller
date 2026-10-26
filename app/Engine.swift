@@ -14,7 +14,7 @@ struct KnobSetup: Codable, Equatable {
     enum Push: String, Codable, CaseIterable { case off = "OFF", toggle = "TOGGLE", momentary = "MOMENTARY" }
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
     /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
-    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH", paramStep = "PARAMETER STEP" }
+    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH", paramStep = "PARAMETER STEP", zoom = "ZOOM" }
     enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP", pitchZero = "PITCH TO ZERO", statusLine = "STATUS LINE" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
@@ -114,6 +114,8 @@ final class Engine: ObservableObject {
                 case "release": self.heard([0x80, UInt8(knob), 0])
                 case "shift": self.heard([w.count > 1 && w[1] == "1" ? 0x90 : 0x80, 16, w.count > 1 && w[1] == "1" ? 127 : 0])
                 case "present": self.togglePresent()
+                case "role":   // role 15 ZOOM: a knob's turn role, as APPLY sets it (v20, for tests from the Mac)
+                    if let r = KnobSetup.TurnRole(rawValue: w.dropFirst(2).joined(separator: " ")) { self.knobs[knob].turnRole = r; self.edited(); self.save() }
                 default: break
                 }
             }
@@ -170,6 +172,7 @@ final class Engine: ObservableObject {
             case .tracks: turn = "Turning selects the track above or below in Live's arrangement."
             case .scrub: turn = "Turning moves the playhead along the timeline, a sixteenth note for every step. Hold Shift for finer steps."
             case .paramStep: turn = "Turning jumps to the next or the previous parameter of the device whose parameter you clicked in Live. The screen names it, its value and its place among the device's parameters. The SELECTED knob then turns this parameter. Clicking another parameter in Live starts again from there."
+            case .zoom: turn = "Turning zooms the timeline of Live's arrangement in (to the right) or out (to the left), as the + and - keys do."
             case .clipPitch: turn = "Turning changes the pitch of the audio clip shown in Clip View, five cents a step, Transpose and Detune together. Hold Shift for single cents. The screen shows the semitones and cents."
             case .selected: turn = "Turning changes the parameter you last clicked in Live, any knob, slider or button of any device or of the mixer. The screen names the device, the parameter and its value. Hold Shift for fine steps. With automation recording on, the turns are written as key frames."
             case .hover: turn = "Hover mode: rest the mouse pointer on any knob, slider or number in Live, and turning this knob turns that control, as dragging it with the mouse would. Hold Shift for fine steps. Do not rest the pointer on a clip: the same drag would move it."
@@ -206,6 +209,7 @@ final class Engine: ObservableObject {
         case .selected: return "Turn: the parameter clicked or stepped to (click it, then ↑ ↓)"
         case .paramStep: return "Turn: next / previous parameter"
         case .clipPitch: return "Turn: clip pitch, 5 cents a step"
+        case .zoom: return "Turn: arrangement zoom in / out (+ −)"
         case .hover: return "Turn: the control under the mouse"
         case .parameter: return "Turn: the device's parameters"
         case .midi: return "Turn: CC \(k.cc), channel \(k.channel) (map it: ⌘M)"
@@ -299,6 +303,13 @@ final class Engine: ObservableObject {
             // v11 (Marko, 26.10.2026: "I select one parameter, and then with this one, I'm jumping to other parameters")
             lastTouched = i; selected = i
             DispatchQueue.global().async { let said = Live.shared.stepParameter(by: Int(step)); DispatchQueue.main.async { self.showLive(said) } }
+            return
+        case .zoom:
+            // v20 (Marko, 26.10.2026: "Turning the knob should change the zoom level on the Ableton arrangement view
+            // timeline"): Live's own zoom_view through AbletonOSC (Live.zoomArrangement), one zoom click per step
+            lastTouched = i; selected = i
+            let n = Int(step.rounded()); guard n != 0 else { return }
+            DispatchQueue.global().async { let said = Live.shared.zoomArrangement(n); DispatchQueue.main.async { self.showLive(said) } }
             return
         case .clipPitch:
             lastTouched = i; selected = i

@@ -84,6 +84,14 @@ better, at about a cent and a half a question.
 `--ask` opens no window and leaves the E16 alone. Little Snitch asks once whether the app may reach `anthropic.com`;
 allow that domain.
 
+## ZOOM (v20, 26.10.2026)
+
+The TURN role **ZOOM** zooms the timeline of Live's arrangement: to the right zooms in, to the left zooms out. It
+uses Live's own `Application.View.zoom_view`, the same call Live's Mackie Control script makes for Zoom + the
+cursor keys, through a handler added to AbletonOSC (`/live/view/zoom_arrangement`, copy in `tools/AbletonOSC-view.py`).
+Knob 15 has it. Tested in Live 12.4.6 on "01 Jai Ganesha Pahi Mam": four steps left went from bars 21–121 out to
+1–673, two steps right came back in to about 33–289.
+
 ## Next
 
 1. The app itself (Swift, the camera's rail language): looks and presets on a page, edited live.
