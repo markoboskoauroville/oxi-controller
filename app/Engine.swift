@@ -14,7 +14,7 @@ struct KnobSetup: Codable, Equatable {
     enum Push: String, Codable, CaseIterable { case off = "OFF", toggle = "TOGGLE", momentary = "MOMENTARY" }
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
     /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
-    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH" }
+    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH", paramStep = "PARAMETER STEP" }
     enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP", pitchZero = "PITCH TO ZERO" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
@@ -132,6 +132,7 @@ final class Engine: ObservableObject {
             switch k.turnRole {
             case .tracks: turn = "Turning selects the track above or below in Live's arrangement."
             case .scrub: turn = "Turning moves the playhead along the timeline, a sixteenth note for every step. Hold Shift for finer steps."
+            case .paramStep: turn = "Turning jumps to the next or the previous parameter of the device whose parameter you clicked in Live. The screen names it, its value and its place among the device's parameters. The SELECTED knob then turns this parameter. Clicking another parameter in Live starts again from there."
             case .clipPitch: turn = "Turning changes the pitch of the audio clip shown in Clip View, five cents a step, Transpose and Detune together. Hold Shift for single cents. The screen shows the semitones and cents."
             case .selected: turn = "Turning changes the parameter you last clicked in Live, any knob, slider or button of any device or of the mixer. The screen names the device, the parameter and its value. Hold Shift for fine steps. With automation recording on, the turns are written as key frames."
             case .hover: turn = "Hover mode: rest the mouse pointer on any knob, slider or number in Live, and turning this knob turns that control, as dragging it with the mouse would. Hold Shift for fine steps. Do not rest the pointer on a clip: the same drag would move it."
@@ -219,6 +220,11 @@ final class Engine: ObservableObject {
                 let said = sh ? Live.shared.changeParameter(by: step * k.speed) : Live.shared.chooseParameter(by: Int(step))
                 DispatchQueue.main.async { self.showLive(said ?? "— Live does not answer") }
             }
+            return
+        case .paramStep:
+            // v11 (Marko, 26.10.2026: "I select one parameter, and then with this one, I'm jumping to other parameters")
+            lastTouched = i; selected = i
+            DispatchQueue.global().async { let said = Live.shared.stepParameter(by: Int(step)); DispatchQueue.main.async { self.showLive(said) } }
             return
         case .clipPitch:
             lastTouched = i; selected = i
@@ -425,7 +431,8 @@ final class Engine: ObservableObject {
         var k = (0..<16).map(KnobSetup.defaults)
         k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
         k[1].name = "AUTO"; k[1].turnRole = .selected; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
-        k[3].name = "PTCH"; k[3].turnRole = .clipPitch; k[3].pushRole = .pitchZero; (k[3].r, k[3].g, k[3].b) = (0.9, 0.3, 0.9)
+        k[3].name = "PARM"; k[3].turnRole = .paramStep; (k[3].r, k[3].g, k[3].b) = (1, 0.85, 0.2)
+        k[4].name = "PTCH"; k[4].turnRole = .clipPitch; k[4].pushRole = .pitchZero; (k[4].r, k[4].g, k[4].b) = (0.9, 0.3, 0.9)
         k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
         knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)
         save(); drawAll()

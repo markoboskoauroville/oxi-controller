@@ -37,8 +37,19 @@ class ViewHandler(AbletonOSCHandler):
 
         # DJ Mantra Ableton Remote (Marko Bosko, 26.10.2026): the parameter last clicked in Live, read and turned by a
         # knob of the OXI E16 ("I cannot change parameters by selecting them")
+        # the parameter knob 4 has stepped to (None: Live's own selected parameter); a new click in Live resets it
+        self._dj_param = None
+        self._dj_seen = None
+
+        def current_parameter():
+            live = self.song.view.selected_parameter
+            if live is not self._dj_seen:
+                self._dj_seen = live
+                self._dj_param = None
+            return self._dj_param if self._dj_param is not None else live
+
         def selected_parameter_info():
-            p = self.song.view.selected_parameter
+            p = current_parameter()
             if p is None:
                 return None, ("", "", "")
             owner = p.canonical_parent
@@ -52,6 +63,25 @@ class ViewHandler(AbletonOSCHandler):
             if p is None:
                 return info
             return info + (float(p.value), float(p.min), float(p.max))
+
+        def step_parameter(params: Optional[Tuple] = ()):
+            base = current_parameter()
+            if base is None:
+                return ("", "", "")
+            device = base.canonical_parent
+            plist = list(getattr(device, "parameters", []))
+            if not plist:
+                return selected_parameter_info()[1]
+            try:
+                i = plist.index(base)
+            except ValueError:
+                i = 0
+            n = int(params[0]) if params else 1
+            self._dj_param = plist[max(0, min(len(plist) - 1, i + (1 if n > 0 else -1)))]
+            p, info = selected_parameter_info()
+            return info + ("%d/%d" % (plist.index(p) + 1, len(plist)),)
+
+        self.osc_server.add_handler("/live/view/step_parameter", step_parameter)
 
         def nudge_selected_parameter(params: Optional[Tuple] = ()):
             p, info = selected_parameter_info()

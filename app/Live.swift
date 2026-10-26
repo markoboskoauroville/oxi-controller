@@ -192,6 +192,15 @@ final class Live {
         return (dev, name, text, hi > lo ? (v - lo) / (hi - lo) : 0)
     }
 
+    /// v11: the next or previous parameter of the device (/live/view/step_parameter); knob 2 then turns that one.
+    func stepParameter(by step: Int) -> String {
+        guard let a = ask("/live/view/step_parameter", step > 0 ? 1 : -1, ms: 600), a.count >= 3,
+              let dev = a[0] as? String, let name = a[1] as? String, let value = a[2] as? String else { return "— Live does not answer" }
+        if name.isEmpty { return "CLICK A PARAMETER OF A DEVICE IN LIVE FIRST" }
+        let where_ = a.count >= 4 ? " · \(a[3])" : ""
+        return "\(dev.uppercased()) · \(name) · \(value)\(where_)"
+    }
+
     func nudgeSelected(by step: Double) -> String {
         guard let a = ask("/live/view/nudge_selected_parameter", step, ms: 600), a.count >= 3,
               let dev = a[0] as? String, let name = a[1] as? String, let value = a[2] as? String else { return "— Live does not answer" }
