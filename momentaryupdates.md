@@ -12,3 +12,10 @@
 2. OXI CONTROLLER (first called Oxi Presets Maker): a Mac app that stores and loads presets for the E16 to control Ableton Live, better than the OXI App: settings change in real time. Research first: the manuals and documentation online, the OXI App, whether it is open source, other people's controllers; reverse engineer what is needed. — **Status:** asked; research started.
 3. A GitHub repository for the device and its software. — **Status:** this repository, markoboskoauroville/oxi-controller (private).
 4. In the star under Ableton Live, named Oxi Controller. — **Status:** asked.
+
+> "first test with this app is: can you store different configurations and recall different configurations? You find your own configurances. It will be good if they can be actually visual, maybe changing the colors of rings or text display on the screen. Basically controlling visual aspects of this device" (Marko, 26.10.2026)
+
+> "then the OSC plugin for Ableton Live and MIDI protocol. We need to combine everything in Oxi to be able to control our Ableton device" (Marko, 26.10.2026)
+
+5. FIRST TEST: store several configurations and recall them, configurations chosen here, and visible on the device — the rings' colours, the text on its display: the device's visual side under the app's control. — **Status:** asked; waits for the research (how a colour and a display text reach the E16).
+6. THEN: Ableton Live through OSC (AbletonOSC, already on the Mac for Ableton Assistant A1) and MIDI, all combined in Oxi Controller, so the E16 drives Live. — **Status:** asked.
