@@ -222,3 +222,5 @@
 ## 39. 26.10.2026: in the star, in Applications, found by typing "Oxi"
 
 > come on, make my Oxi application part of the Start Menu and put it in the Application folder. When I type "Oxi" to search, beside the original app, this one must come up
+
+**Status:** done. The app is now "DJ Mantra Ableton Remote for OXI E16 (Mantra).app" in /Applications (the old name is removed, the bundle id is unchanged, the data in Application Support is unchanged). Spotlight "oxi" finds it beside "OXI App" (checked with mdfind). build/ has .metadata_never_index, so the build copy is not listed. The star has a row for it in Ableton Live (STAR_SWIFT rows.json).

@@ -8,7 +8,7 @@ rings and the screen are drawn from the values, and the result goes to Live thro
 4 × 4 picture, 22 pictures crossfading in turning colours, the same picture on the screen. The app's name is on the
 E16's screen at every start, its signature.
 
-- App: `./build.sh` → /Applications/DJ Mantra Ableton Remote.app (v1, signed "Mantra Apps").
+- App: `./build.sh` → /Applications/DJ Mantra Ableton Remote for OXI E16 (Mantra).app (v1, signed "Mantra Apps").
 - Tool: `build/e16looks seed | list | show NAME | cycle 4 | present [s] | exit`.
 - Setups: ~/Library/Application Support/DJ Mantra Ableton Remote/setups/<NAME>.json.
 
@@ -78,8 +78,8 @@ better, at about a cent and a half a question.
 
 **From the Terminal** (the same code as the window):
 
-    "DJ Mantra Ableton Remote.app/Contents/MacOS/DJMantraAbletonRemote" --import ~/Downloads/API/HAIKU-KEY.txt
-    "DJ Mantra Ableton Remote.app/Contents/MacOS/DJMantraAbletonRemote" --family opus --ask 6 "Turning this knob should change the tempo."
+    "DJ Mantra Ableton Remote for OXI E16 (Mantra).app/Contents/MacOS/DJMantraAbletonRemote" --import ~/Downloads/API/HAIKU-KEY.txt
+    "DJ Mantra Ableton Remote for OXI E16 (Mantra).app/Contents/MacOS/DJMantraAbletonRemote" --family opus --ask 6 "Turning this knob should change the tempo."
 
 `--ask` opens no window and leaves the E16 alone. Little Snitch asks once whether the app may reach `anthropic.com`;
 allow that domain.
