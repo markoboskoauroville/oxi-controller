@@ -160,3 +160,7 @@
 > I did. Internet turned out to be something impossible, but it is possible. I think it can be done with the Mackie  protocol.
 
 (Dictated; "Internet" is the zoom prompt on knob 15: "Please change the zoom level inside Ableton.")
+
+## 33. 26.10.2026: build the ZOOM and test it in Live
+
+> Please, you run it and test it in Ableton. Turning the knob should change the zoom level on the Ableton arrangement view timeline. feel free to close the session, close the app, and open it again, then open ableton, and let me know if it works
