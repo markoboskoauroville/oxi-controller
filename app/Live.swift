@@ -180,6 +180,17 @@ final class Live {
         return rec != 1
     }
 
+    // MARK: SELECTED (v7, Marko, 26.10.2026: "I cannot change parameters by selecting them"): the parameter last
+    // clicked in Live (song.view.selected_parameter), turned through two commands added to the local AbletonOSC
+    // (abletonosc/view.py: /live/view/get/selected_parameter, /live/view/nudge_selected_parameter)
+
+    func nudgeSelected(by step: Double) -> String {
+        guard let a = ask("/live/view/nudge_selected_parameter", step, ms: 600), a.count >= 3,
+              let dev = a[0] as? String, let name = a[1] as? String, let value = a[2] as? String else { return "— Live does not answer" }
+        if name.isEmpty { return "CLICK A KNOB OR SLIDER IN LIVE FIRST" }
+        return "\(dev.uppercased()) · \(name) · \(value)"
+    }
+
     // MARK: HOVER (Marko, 26.10.2026: "I just simply cover any knob in Ableton, and when I turn the knob in my hardware,
     // it turns that knob. In hovering mode")
 
