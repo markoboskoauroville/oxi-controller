@@ -128,6 +128,24 @@ Knob 15 has it. Tested in Live 12.4.6 on "01 Jai Ganesha Pahi Mam": four steps l
 - Seen through the Mantra Manual Camera above the E16 (`MANTRA_NDI/scripts`, `mcam snap`; focus 0.5 is sharp at this
   distance).
 
+## Profiles on pages (v24, 26.10.2026)
+
+Marko: *"Each profile can be assigned to the range of pages … I can directly do everything from my device."*
+
+- **A profile** is a saved set of knobs: one page, or several. AUTOMATION is one.
+- **SAVE PROFILE** saves the page you are on, under the name in the field. If the page belongs to a run of pages with
+  the same name, it saves the whole run. The page then carries that name.
+- **PROFILES…** lists every profile, how many pages it has, and where it sits on the E16 now. Choose a page and
+  press **PLACE**: the profile is copied onto the E16 from that page on, its knobs renumbered for those pages, and the
+  pages take its name ("NAME 1", "NAME 2" when it has several).
+- **The layout** is what the E16 holds: every page with its knobs and its name. The app saves it on every change in
+  `~/Library/Application Support/DJ Mantra Ableton Remote/layout.json` and loads it at the start. So everything
+  placed is played from the device: tap Shift twice, push the page's knob, tap Shift twice, play. When you leave the
+  picker, the screen shows the page and its name for two seconds.
+- **The page name** can also be written by hand, in the field beside the page buttons.
+- Tested 26.10.2026: AUTOMATION placed on page 5 (knob 1 TRK on CC 65). The picker on the E16 showed P1 and P5 named
+  AUTOM, P5 inverted, page 5's ring white, pages 1–4 orange, knob 16 orange (seen through the Mantra Manual Camera).
+
 ## Next
 
 1. The app itself (Swift, the camera's rail language): looks and presets on a page, edited live.

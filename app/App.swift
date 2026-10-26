@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 23
+let VERSION = 24
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -59,6 +59,7 @@ private let noteBlue = Color(red: 0.36, green: 0.72, blue: 1)
 struct Main: View {
     @EnvironmentObject var e: Engine
     @State private var view = UserDefaults.standard.string(forKey: "view") ?? "knobs"
+    @State private var showProfiles = false
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -66,13 +67,10 @@ struct Main: View {
                 Button(e.presenting ? "STOP THE SHOW" : "PRESENT THE OXI") { e.togglePresent() }.disabled(!e.connected)
                 Button(e.statusLineOn ? "LIVE STATUS LINE: ON" : "LIVE STATUS LINE: OFF") { e.toggleStatusLine() }
                 Spacer()
-                TextField("setup", text: $e.setupName).frame(maxWidth: 180)
-                Button("SAVE") { e.save() }
-                Menu("RECALL") {
-                    Button("AUTOMATION (the first profile)") { e.liveAutomationProfile() }
-                    Divider()
-                    ForEach(e.saved(), id: \.self) { n in Button(n) { e.recall(n) } }
-                }.frame(maxWidth: 110)
+                // v24: a profile is saved from the page(s) it sits on, and placed on pages in PROFILES
+                TextField("profile", text: $e.setupName).frame(maxWidth: 180)
+                Button("SAVE PROFILE") { e.save() }
+                Button("PROFILES…") { showProfiles = true }
             }
             Text(e.status).font(.system(.callout, design: .monospaced))
                 .foregroundStyle(e.connected ? .green : .secondary).fixedSize(horizontal: false, vertical: true)
@@ -83,6 +81,8 @@ struct Main: View {
                 Text(e.pageLine()).font(.system(.callout, design: .monospaced).bold()).foregroundStyle(orange)
                 Button("PAGE ▶") { e.goTo(page: e.page + 1) }.disabled(e.page == KnobSetup.pageCount - 1)
                 Button("FIRST") { e.goTo(page: 0) }.disabled(e.page == 0)
+                // v24: the page's own name (shown on the E16 when you choose pages)
+                TextField("page name", text: Binding(get: { e.pageName(e.page) }, set: { e.setPageName($0) })).frame(maxWidth: 160)
             }
             // v15 (Marko, 26.10.2026: "Please make two views: same as an icon view, what is now, or list view")
             Picker("", selection: $view) { Text("KNOBS").tag("knobs"); Text("LIST").tag("list") }
@@ -120,6 +120,42 @@ struct Main: View {
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
+        .sheet(isPresented: $showProfiles) { ProfilesView().environmentObject(e) }
+    }
+}
+
+/// v24 (Marko, 26.10.2026: "Each profile can be assigned to the range of pages ... in the setting of each profile, so
+/// that I can assign it the fixed page inside the device"): every saved profile, where it sits, and PLACE.
+struct ProfilesView: View {
+    @EnvironmentObject var e: Engine
+    @Environment(\.dismiss) private var dismiss
+    @State private var at: [String: Int] = [:]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("PROFILES ON THE E16").font(.headline)
+            Text("A profile is a saved set of knobs, one page or several. PLACE puts it on the E16 from the page you choose; those pages carry its name, and the E16 keeps them: tap Shift twice, push the page's knob, and play. Everything placed is kept by the app and comes back at its next start.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            ForEach(e.saved(), id: \.self) { n in
+                let count = e.profilePages(n).count
+                HStack(spacing: 10) {
+                    Text(n).font(.system(.body, design: .monospaced).bold()).frame(minWidth: 140, alignment: .leading)
+                    Text(count == 1 ? "1 page" : "\(count) pages").font(.caption).frame(width: 60, alignment: .leading)
+                    Text(e.placedAt(n).map { "now on page " + $0 } ?? "not on the E16").font(.caption)
+                        .foregroundStyle(e.placedAt(n) == nil ? .secondary : .primary).frame(width: 130, alignment: .leading)
+                    Stepper("page \(at[n, default: e.page] + 1)" + (count > 1 ? "–\(at[n, default: e.page] + count)" : ""),
+                            value: Binding(get: { at[n, default: e.page] }, set: { at[n] = $0 }), in: 0...(KnobSetup.pageCount - count))
+                        .frame(width: 150)
+                    Button("PLACE") { e.place(n, at: at[n, default: e.page]) }
+                }
+            }
+            Divider()
+            HStack {
+                Button("AUTOMATION as it came (on page 1)") { e.liveAutomationProfile() }
+                Spacer()
+                Button("DONE") { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16).frame(minWidth: 620)
     }
 }
 

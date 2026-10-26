@@ -108,6 +108,10 @@ struct KnobSetup: Codable, Equatable {
 
 struct Setup: Codable { var name: String; var knobs: [KnobSetup]; var pages: [[KnobSetup]]? = nil }
 
+/// v24: what the E16 holds, every page with its knobs and its name; saved on every change and loaded at the start, so
+/// the device carries all the profiles placed on it (Marko, 26.10.2026: "I can directly do everything from my device").
+struct Layout: Codable { var pages: [[KnobSetup]]; var names: [String] }
+
 final class Engine: ObservableObject {
     // v21: pages, each sixteen knobs; knobs, values and pushed are the page in front
     @Published var pages: [[KnobSetup]] = [(0..<16).map(KnobSetup.defaults)]
@@ -128,15 +132,97 @@ final class Engine: ObservableObject {
             pages.append((0..<16).map { KnobSetup.defaults(n * 16 + $0) })
         }
         while pageValues.count < pages.count { pageValues.append(Array(repeating: 0, count: 16)) }
+        while pageNames.count < pages.count { pageNames.append("") }
         while pagePushed.count < pages.count { pagePushed.append(Array(repeating: false, count: 16)) }
         page = p; lastTouched = nil; liveSays = ""
-        status = navMode ? "PAGE \(p + 1) of \(KnobSetup.pageCount)" : pageLine()
+        status = navMode ? "PAGE \(p + 1) of \(KnobSetup.pageCount)" + (pageName(p).isEmpty ? "" : " · " + pageName(p)) : pageLine()
         drawAll()
     }
 
     func pageLine() -> String {
         let (ch, a) = KnobSetup.numbers(page * 16), b = a + 15
-        return "PAGE \(page + 1) of \(KnobSetup.pageCount) · CC and notes \(a)–\(b) · channel \(ch)"
+        let name = pageName(page)
+        return "PAGE \(page + 1) of \(KnobSetup.pageCount)" + (name.isEmpty ? "" : " · \(name)") + " · CC and notes \(a)–\(b) · channel \(ch)"
+    }
+
+    // MARK: v24, profiles on pages (Marko, 26.10.2026: "Each profile can be assigned to the range of pages. Instead of
+    // recalling the presets, I can store them on the page, and then by turning the page and naming the page, I can
+    // directly do everything from my device")
+    //
+    //   a PROFILE   a saved setup: one page of sixteen knobs or several (AUTOMATION.json …)
+    //   PLACE       a profile copied onto the device's pages from a page on; those pages take its name
+    //   the LAYOUT  every page with its name (layout.json), saved on every change, loaded at the start
+
+    static let layoutFile = Engine.dir.deletingLastPathComponent().appendingPathComponent("layout.json")
+    @Published var pageNames: [String] = [""]
+
+    func pageName(_ p: Int) -> String { p < pageNames.count ? pageNames[p] : "" }
+
+    func setPageName(_ n: String) {
+        while pageNames.count <= page { pageNames.append("") }
+        pageNames[page] = String(n.uppercased().prefix(16)); saveLayout(); drawLabels()
+    }
+
+    func saveLayout() {
+        let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        while pageNames.count < pages.count { pageNames.append("") }
+        try? enc.encode(Layout(pages: pages, names: pageNames)).write(to: Engine.layoutFile)
+    }
+
+    private func useLayout(_ l: Layout) {
+        var ps = l.pages.isEmpty ? [(0..<16).map(KnobSetup.defaults)] : l.pages
+        for p in ps.indices { ps[p] = (0..<16).map { var k = $0 < ps[p].count ? ps[p][$0] : KnobSetup.defaults(p * 16 + $0); k.number(p * 16 + $0); return k } }
+        page = 0; pages = ps
+        pageNames = (0..<ps.count).map { $0 < l.names.count ? l.names[$0] : "" }
+        pageValues = ps.map { _ in Array(repeating: 0, count: 16) }; pagePushed = ps.map { _ in Array(repeating: false, count: 16) }
+        setupName = pageNames.first(where: { !$0.isEmpty }) ?? setupName
+    }
+
+    /// A page still as it came (every knob its default): such pages at a profile's end are not part of it.
+    private func untouched(_ knobs: [KnobSetup], _ p: Int) -> Bool {
+        knobs.indices.allSatisfy { i in var d = KnobSetup.defaults(p * 16 + i); d.number(p * 16 + i); var k = knobs[i]; k.number(p * 16 + i); return k == d }
+    }
+
+    /// A profile's own pages: what it was saved with, the untouched pages at its end left out.
+    func profilePages(_ name: String) -> [[KnobSetup]] {
+        guard let s = load(name) else { return [] }
+        var ps = s.pages ?? [s.knobs]
+        while ps.count > 1, untouched(ps[ps.count - 1], ps.count - 1) { ps.removeLast() }
+        return ps
+    }
+
+    /// Where a profile is on the device now (the pages that carry its name), as "3–4", or nil.
+    func placedAt(_ name: String) -> String? {
+        let n = name.uppercased()
+        let ps = pageNames.indices.filter { pageNames[$0] == n }
+        guard let a = ps.first, let b = ps.last else { return nil }
+        return a == b ? "\(a + 1)" : "\(a + 1)–\(b + 1)"
+    }
+
+    /// PLACE: the profile's pages onto the device from page [first] (0-based) on, renumbered there, named after it.
+    func place(_ name: String, at first: Int) {
+        let src = profilePages(name)
+        guard !src.isEmpty else { status = "\(name): nothing saved"; return }
+        let n = name.uppercased()
+        goTo(page: min(KnobSetup.pageCount - 1, first + src.count - 1))      // makes the pages up to there
+        for (o, knobs) in src.enumerated() where first + o < KnobSetup.pageCount {
+            let p = first + o
+            pages[p] = knobs.indices.map { i in var k = knobs[i]; k.number(p * 16 + i); return k }
+            pageValues[p] = Array(repeating: 0, count: 16); pagePushed[p] = Array(repeating: false, count: 16)
+            pageNames[p] = src.count > 1 ? "\(n) \(o + 1)" : n
+        }
+        page = first; setupName = n
+        saveLayout()
+        status = "\(n) placed on page" + (src.count > 1 ? "s \(first + 1)–\(first + src.count)" : " \(first + 1)")
+        drawAll()
+    }
+
+    /// A profile's name on the current page's run of pages (the pages with that name, or this page alone).
+    private func profileRange() -> [Int] {
+        let n = pageName(page)
+        guard !n.isEmpty else { return [page] }
+        let base = n.replacingOccurrences(of: #" \d+$"#, with: "", options: .regularExpression)
+        return pageNames.indices.filter { pageNames[$0] == base || pageNames[$0].hasPrefix(base + " ") }
     }
     @Published var selected = 0
     @Published var setupName = "MY SETUP"
@@ -160,7 +246,8 @@ final class Engine: ObservableObject {
         MIDIClientCreateWithBlock("DJ Mantra Ableton Remote" as CFString, &client, nil)
         // the port Ableton sees: Preferences → Link/Tempo/MIDI → Input "DJ Mantra Remote" (Track and Remote on)
         MIDISourceCreate(client, "DJ Mantra Remote" as CFString, &source)
-        if let last = UserDefaults.standard.string(forKey: "lastSetup"), let s = load(last) { apply(s) }
+        if let d = try? Data(contentsOf: Engine.layoutFile), let l = try? JSONDecoder().decode(Layout.self, from: d) { useLayout(l) }
+        else if let last = UserDefaults.standard.string(forKey: "lastSetup"), let s = load(last) { apply(s); pageNames[0] = s.name.uppercased() }
         // the rings at most 30 times a second, whatever the knobs do
         Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in self?.flushRings() }
         // v13 (Marko, 26.10.2026: "the device itself is on the camera, so you can use the camera to test"): a test door
@@ -190,6 +277,8 @@ final class Engine: ObservableObject {
                 case "shift": self.heard([w.count > 1 && w[1] == "1" ? 0x90 : 0x80, 16, w.count > 1 && w[1] == "1" ? 127 : 0])
                 case "present": self.togglePresent()
                 case "nav": self.setNav(!self.navMode)
+                case "place":   // place NAME PAGE (v24 tests): a profile onto pages from PAGE (1-based)
+                    if w.count > 2, let p = Int(w[w.count - 1]) { self.place(w[1...(w.count - 2)].joined(separator: " "), at: p - 1) }
                 case "role":   // role 15 ZOOM: a knob's turn role, as APPLY sets it (v20, for tests from the Mac)
                     if let r = KnobSetup.TurnRole(rawValue: w.dropFirst(2).joined(separator: " ")) { self.knobs[knob].turnRole = r; self.edited(); self.save() }
                 default: break
@@ -549,6 +638,7 @@ final class Engine: ObservableObject {
         navMode = on; lastTouched = nil
         status = on ? "PAGES: push knobs 1-15 for a page, turn knob 16 for the next or the one before; tap Shift twice to leave" : pageLine()
         drawAll()
+        if !on { showLive("P\(page + 1) " + (pageName(page).isEmpty ? "" : pageName(page))) }
     }
 
     /// A push while choosing a page: knobs 1-15 jump to their page.
@@ -564,7 +654,8 @@ final class Engine: ObservableObject {
             let p = bankStart + i
             guard p < KnobSetup.pageCount else { return ("", "") }
             let (ch, n) = KnobSetup.numbers(p * 16)
-            return ("P\(p + 1)", p <= lastPage ? (ch > 1 ? "CH\(ch)" : "\(n)") : "")
+            _ = (ch, n)
+            return ("P\(p + 1)", String(pageName(p).prefix(5)))
         }
     }
 
@@ -602,9 +693,15 @@ final class Engine: ObservableObject {
 
     func save() {
         let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try? enc.encode(Setup(name: setupName, knobs: pages[0], pages: pages)).write(to: file(setupName))
-        UserDefaults.standard.set(setupName.uppercased(), forKey: "lastSetup")
-        status = "Saved \(setupName.uppercased())"
+        // v24: a profile is the pages it sits on (this page, or the run of pages carrying its name); it names them
+        let run = profileRange()
+        let ps = run.map { pages[$0] }
+        try? enc.encode(Setup(name: setupName, knobs: ps[0], pages: ps)).write(to: file(setupName))
+        let n = setupName.uppercased()
+        if pageName(page).isEmpty || run.count == 1 { setPageName(n) }
+        UserDefaults.standard.set(n, forKey: "lastSetup")
+        saveLayout()
+        status = "Saved \(n) (page" + (run.count > 1 ? "s \(run[0] + 1)–\(run[run.count - 1] + 1))" : " \(page + 1))")
         objectWillChange.send()
     }
 
@@ -613,11 +710,7 @@ final class Engine: ObservableObject {
         return try? JSONDecoder().decode(Setup.self, from: d)
     }
 
-    func recall(_ name: String) {
-        guard let s = load(name) else { return }
-        apply(s); UserDefaults.standard.set(name, forKey: "lastSetup")
-        status = "Recalled \(name)"; lastTouched = nil; drawAll()
-    }
+    func recall(_ name: String) { place(name, at: page) }
 
     private func apply(_ s: Setup) {
         setupName = s.name
@@ -628,7 +721,7 @@ final class Engine: ObservableObject {
         pageValues = ps.map { _ in Array(repeating: 0, count: 16) }; pagePushed = ps.map { _ in Array(repeating: false, count: 16) }
     }
 
-    func edited() { ringsDue = true; drawLabels() }
+    func edited() { ringsDue = true; drawLabels(); saveLayout() }
 
     // MARK: v18, the chat with Claude for every knob (Chat.swift)
 
