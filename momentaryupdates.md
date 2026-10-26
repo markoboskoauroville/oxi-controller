@@ -154,3 +154,9 @@
 > Also, if I ask for something that is impossible, please tell me it is impossible, or what we would need to change in the app to make it possible. I can ask for things that are not possible.
 >
 > In that case, you need to build a chat interface inside this, so there is back and forth communication for a certain prompt or button. That way we can develop it through different testing phases, going back and forth.
+
+## 32. 26.10.2026: zoom said impossible, Mackie
+
+> I did. Internet turned out to be something impossible, but it is possible. I think it can be done with the Mackie  protocol.
+
+(Dictated; "Internet" is the zoom prompt on knob 15: "Please change the zoom level inside Ableton.")
