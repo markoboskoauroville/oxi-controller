@@ -120,3 +120,7 @@
 > "our app is missing a suitable icon" (Marko, 26.10.2026)
 
 24. The app's icon. — **Status:** v12: drawn by icon/make_icon.swift at every build: the E16's sixteen knobs as rings of LED dots, lit in the AUTOMATION colours (orange, green, blue, gold, magenta; knob 16 white), DJ MANTRA in orange and the version under them.
+
+> "the device itself is on the camera, so you can use the camera to test, make further bug testings, and other testings" (Marko, 26.10.2026)
+
+25. Self-testing through the Pixel camera: the app takes test turns and pushes on a local port, the camera shows what the E16 does, Live is read back. — **Status:** v14: the app's test door (UDP 127.0.0.1:11010: turn N STEP, push N, release N, shift 0|1, present); tools/selftest.py runs knob 1 (track down and back), knob 3 (a beat and back), knob 16 (help), knob 4 (a parameter step), knob 2 (a nudge and back), knob 4's push (status line off), reads Live and photographs the E16 after each: 9/9 PASS; the camera showed TRACK 5 Djembe, BEAT 115.75, the help, EQ EIGHT · Output 0.00 → 0.38 dB, LIVE STATUS LINE OFF. Found and fixed: the test read stale copies of the app's answers (the router copies every answer to every client: drain first); with nothing clicked in Live, knob 4 now starts from the selected device's first parameter; the help had 64 pages (each plain knob 3 pages) → plain knobs share one page: 28.

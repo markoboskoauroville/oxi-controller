@@ -85,9 +85,36 @@ final class Engine: ObservableObject {
         if let last = UserDefaults.standard.string(forKey: "lastSetup"), let s = load(last) { apply(s) }
         // the rings at most 30 times a second, whatever the knobs do
         Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in self?.flushRings() }
+        // v13 (Marko, 26.10.2026: "the device itself is on the camera, so you can use the camera to test"): a test door
+        // on 127.0.0.1:11010 (UDP): "turn N STEP", "push N", "release N", "shift 0|1" act as the E16's own messages
+        Thread { [weak self] in self?.testDoor() }.start()
         // v8 (Marko, 26.10.2026: "our device is reading selected parameters ... it shows the value with an LED ... If I
         // click on other parameters, the value is read from that parameter"): a SELECTED knob's ring follows Live
         Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in self?.followSelected() }
+    }
+
+    private func testDoor() {
+        let fd = socket(AF_INET, SOCK_DGRAM, 0)
+        var a = sockaddr_in(); a.sin_family = sa_family_t(AF_INET); a.sin_port = in_port_t(11010).bigEndian; a.sin_addr.s_addr = inet_addr("127.0.0.1")
+        guard withUnsafePointer(to: &a, { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }) == 0 else { return }
+        var buf = [UInt8](repeating: 0, count: 256)
+        while true {
+            let n = recv(fd, &buf, buf.count, 0); guard n > 0 else { continue }
+            let w = String(decoding: buf[0..<n], as: UTF8.self).split(separator: " ").map(String.init)
+            guard let cmd = w.first else { continue }
+            let knob = w.count > 1 ? (Int(w[1]) ?? 1) - 1 : 0
+            DispatchQueue.main.async {
+                switch cmd {
+                case "turn": let st = w.count > 2 ? (Int(w[2]) ?? 1) : 1
+                    self.heard([0xB0, UInt8(knob + 1), UInt8(st < 0 ? 128 + st : st)])
+                case "push": self.heard([0x90, UInt8(knob), 127])
+                case "release": self.heard([0x80, UInt8(knob), 0])
+                case "shift": self.heard([w.count > 1 && w[1] == "1" ? 0x90 : 0x80, 16, w.count > 1 && w[1] == "1" ? 127 : 0])
+                case "present": self.togglePresent()
+                default: break
+                }
+            }
+        }
     }
 
     // MARK: the device
@@ -125,7 +152,14 @@ final class Engine: ObservableObject {
 
     func helpPages() -> [(String, String)] {
         var pages: [(String, String)] = [("HELP", "Turn knob sixteen to read the pages, one page for every knob. Push knob sixteen to leave the help. Touching any other knob also leaves it. This setup is called \(setupName).")]
-        for i in 0..<15 {
+        // knobs still as they came (named K<n>, plain MIDI) share one page instead of three each (64 pages, seen
+        // through the camera 26.10.2026)
+        let plain = (0..<15).filter { i in let k = knobs[i]; return k.name == "K\(i + 1)" && k.turnRole == .midi && k.pushRole == .midi }
+        if !plain.isEmpty {
+            let list = plain.map { "\($0 + 1)" }.joined(separator: ", ")
+            pages.append(("KNOBS \(list)", "These knobs are not set up yet. Each one sends its own control change into Live through the port DJ Mantra Remote, control change twenty for knob one and one more for every knob after it, and its push switches a note on and off. Map them in Live with MIDI Map, or give them a job in the app."))
+        }
+        for i in 0..<15 where !plain.contains(i) {
             let k = knobs[i]
             let kind = k.pushKind == .note ? "note" : "control change"
             let turn: String

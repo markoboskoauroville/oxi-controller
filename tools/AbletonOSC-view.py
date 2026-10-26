@@ -125,7 +125,13 @@ class ViewHandler(AbletonOSCHandler):
             self.manager._dj_line_on = True
             base = current_parameter()
             if base is None:
-                return ("", "", "")
+                # nothing clicked yet: the selected track's selected device (or its first), from its first parameter
+                track = self.song.view.selected_track
+                device = track.view.selected_device or (track.devices[0] if len(track.devices) else None)
+                if device is None or not len(device.parameters):
+                    return ("", "", "")
+                self._dj_param = device.parameters[0]
+                base = self._dj_param
             device = base.canonical_parent
             plist = list(getattr(device, "parameters", []))
             if not plist:
