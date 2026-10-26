@@ -178,3 +178,9 @@
 > We are simplifying the logic of the E16, much more than the manufacturer did in his app. He used scenes and pages. We don't have scenes and pages, we have only pages, until we come to the last page.
 >
 > What is the last page? I don't know. It depends on how many Note and CC numbers are the maximum possible.
+
+## 35. 26.10.2026: the ring's colour and intensity
+
+> We already have a predictable situation. The only thing that is customizable is the color of each LED ring, and that is in the settings next to each knob.
+>
+> Please add a color picker with all the available colors, so the user can adjust the color and the intensity of the ring.
