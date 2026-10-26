@@ -34,6 +34,54 @@ Build: `swiftc -O Sources/E16/E16Remote.swift tools/e16looks/main.swift -o build
 `build/e16looks seed | list | show NAME | cycle 4 | exit`. `exit` gives the device back to its scene: without it the
 E16 stays blank.
 
+## The Anthropic key and the chat
+
+*(v18, 26.10.2026.)* Every knob has a **prompt**: in the LIST view, the field where the note used to be. Write in
+your own words what the knob should do and press Return. The CHAT beside the knobs opens and Claude answers.
+
+**What Claude answers.** The app gives Claude a catalogue of everything a knob can do today (the TURN and PUSH roles of
+the knob's SETUP) and asks for one of three verdicts:
+
+- **POSSIBLE**: the roles that do it, with an **APPLY** button that sets them on the knob.
+- **PARTLY**: what works now, and under *To make it possible* what is missing.
+- **IMPOSSIBLE**: it says so, and what would have to change: a new role in the app, a new AbletonOSC handler, a Live
+  API that exists or does not, or a limit of the E16 itself.
+
+Nothing Claude writes runs by itself. The app accepts only roles from its own list and changes a knob only when
+APPLY is pressed. Answer back in the chat to go another round. Each knob keeps its own conversation (CLEAR starts
+again), stored in `~/Library/Application Support/DJ Mantra Ableton Remote/chats.json`.
+
+**Settings (⌘,).**
+- **Choose key files…** opens the file dialog, several files at once. The files can be ordinary notes with other text
+  in them: the key is found by its shape (`sk-ant-…`), and the words beside it become its title. This is the Keyring
+  parser of MANTRA_MANIFEST `modules/keyring.md` §4, §6b and §10d.
+- The keys picked are stored with their titles in `~/Library/Application Support/DJ Mantra Ableton Remote/keys.txt`
+  (keyring v1 format, permissions 0600), never in this repository. A radio chooses the key in force. On screen a key
+  is named only by its position and title, never shown.
+- **The order a key is looked for:** `ANTHROPIC_API_KEY` in the environment, then the keys picked in Settings, then
+  `keyring get anthropic`, then the notes in `~/Downloads/API` (files named Claude or Anthropic first).
+- **Model:** Opus, Sonnet or Haiku. The app asks the API (`GET /v1/models`) for the newest model of that family once a
+  session, so no model version is written in the code (`modules/model-names.md`).
+
+**Which model** (measured 26.10.2026, the same three questions on each):
+
+| | Simple ("turn = parameter I clicked, push = play/stop") | Tempo | Hard ("record a take, loop the last N bars") | Per question |
+|---|---|---|---|---|
+| Haiku 5.5 | right, 4.8 s | right, 6.6 s | "impossible", one confused sentence | ~0.05 cent |
+| Sonnet 5.5 | right, 4.2 s | right, 7.5 s | "impossible", contradicts itself on loop length | ~0.7 cent |
+| **Opus 5.5** | right, 4.8 s, suggests renaming the knob | right, 7.2 s, and advises a narrow tempo range | **"partly", accurate: map record by MIDI, loop by a new role** | ~1.5 cents |
+
+Opus is the default. The point of the chat is an honest *possible / impossible*, and that is where Opus was clearly
+better, at about a cent and a half a question.
+
+**From the Terminal** (the same code as the window):
+
+    "DJ Mantra Ableton Remote.app/Contents/MacOS/DJMantraAbletonRemote" --import ~/Downloads/API/HAIKU-KEY.txt
+    "DJ Mantra Ableton Remote.app/Contents/MacOS/DJMantraAbletonRemote" --family opus --ask 6 "Turning this knob should change the tempo."
+
+`--ask` opens no window and leaves the E16 alone. Little Snitch asks once whether the app may reach `anthropic.com`;
+allow that domain.
+
 ## Next
 
 1. The app itself (Swift, the camera's rail language): looks and presets on a page, edited live.

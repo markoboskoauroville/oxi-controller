@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 17
+let VERSION = 18
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -13,6 +13,8 @@ struct DJMantraAbletonRemote: App {
             Main().environmentObject(Delegate.engine)
                 .frame(minWidth: 900, minHeight: 620)
         }
+        // v18 (Marko, 26.10.2026: "I also need settings ... a file picker for the Anthropic key, and a way to choose the model")
+        Settings { SettingsView() }
     }
 }
 
@@ -20,9 +22,27 @@ final class Delegate: NSObject, NSApplicationDelegate {
     static let engine = Engine()
     func applicationDidFinishLaunching(_ n: Notification) {
         let e = Delegate.engine
-        e.connect()
+        let args = CommandLine.arguments
+        // --import FILE...: the same parser as Settings' file picker; --ask: a chat test, no window, the E16 left alone
+        if let m = args.firstIndex(of: "--import") {
+            print(Keys.importFiles(args[(m + 1)...].prefix { !$0.hasPrefix("--") }.map { URL(fileURLWithPath: $0) })); fflush(stdout)
+            if !args.contains("--ask") { exit(0) }
+        }
+        if args.contains("--ask") { NSApp.setActivationPolicy(.prohibited); NSApp.windows.forEach { $0.orderOut(nil) } } else { e.connect() }
         // tests from the Mac: --profile automation loads the first profile, --help-page N shows that help page
         let a = CommandLine.arguments
+        // a test from the Terminal, through the real chat code: --ask 3 "make this knob play and stop" [--family haiku]
+        if let f = a.firstIndex(of: "--family"), f + 1 < a.count { Models.family = a[f + 1] }
+        if let q = a.firstIndex(of: "--ask"), q + 2 < a.count, let n = Int(a[q + 1]) {
+            let i = n - 1; let before = e.chats[i]?.count ?? 0; let t0 = Date()
+            e.send(a[q + 2], knob: i)
+            Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { t in
+                guard e.asking == nil, (e.chats[i]?.count ?? 0) >= before + 2, let r = e.chats[i]?.last else { return }
+                t.invalidate()
+                print("[\(Models.resolved ?? Models.family)] \(String(format: "%.1f", Date().timeIntervalSince(t0))) s · \(r.verdict ?? "-") · turn \(r.turnRole ?? "-") · push \(r.pushRole ?? "-")\n  \(r.text)\n  needs: \(r.needs ?? "-")")
+                fflush(stdout); exit(0)
+            }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             if a.contains("--profile"), a.contains("automation") { e.liveAutomationProfile() }
             if let i = a.firstIndex(of: "--help-page"), i + 1 < a.count, let n = Int(a[i + 1]) { e.helpPage = n - 2; e.helpTurn(1) }
@@ -72,7 +92,12 @@ struct Main: View {
                     }
                     .frame(minWidth: 460)
                 }
-                Editor(i: e.selected).frame(minWidth: 280, maxWidth: 380)
+                VStack(alignment: .leading, spacing: 6) {
+                    Picker("", selection: $e.side) { Text("SETUP").tag("setup"); Text("CHAT").tag("chat") }
+                        .pickerStyle(.segmented)
+                    if e.side == "chat" { ChatView(i: e.selected) } else { Editor(i: e.selected) }
+                }
+                .frame(minWidth: 300, maxWidth: 400)
             }
             Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn the knob. Shift on the E16 shows the values on its screen and turns the knobs finer. Knob 16 is HELP: turning it reads a page for every knob on the E16\'s screen, pushing it leaves.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -102,7 +127,7 @@ struct KnobCell: View {
             Text(e.turnText(i)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             // the push in orange (Marko, 26.10.2026: "color code the push part. Put it in orange"); his note in blue
             Text(e.pushText(i)).font(.caption).foregroundStyle(orange).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            if !k.note.isEmpty { Text(k.note).font(.caption).italic().foregroundStyle(noteBlue).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
+            if !k.note.isEmpty { Text("“" + k.note + "”").font(.caption).italic().foregroundStyle(noteBlue).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
         }
         .padding(6)
         .frame(maxWidth: .infinity)
@@ -140,8 +165,11 @@ struct KnobRow: View {
             }
             .frame(width: 34, height: 34)
             Text(k.name).font(.system(.body, design: .monospaced).bold()).frame(width: 52, alignment: .leading)
-            TextField("my note", text: Binding(get: { e.knobs[i].note }, set: { e.knobs[i].note = $0; e.save() }))   // saved as typed
-                .textFieldStyle(.roundedBorder).frame(minWidth: 140, maxWidth: 200)
+            // v18 (Marko, 26.10.2026: "Where my notes are now, show the prompt instead"): what the knob should do, in his
+            // words; Return sends it to Claude, whose answer opens in the CHAT beside the knobs
+            TextField("prompt: what should this knob do?", text: Binding(get: { e.knobs[i].note }, set: { e.knobs[i].note = $0; e.save() }), axis: .vertical)
+                .textFieldStyle(.roundedBorder).foregroundStyle(noteBlue).frame(minWidth: 160, maxWidth: 240)
+                .onSubmit { e.selected = i; e.side = "chat"; e.send(e.knobs[i].note, knob: i) }
             Spacer(minLength: 0)
         }
         .padding(6)
@@ -202,4 +230,131 @@ private struct ScrollCatcher: NSViewRepresentable {
 
 extension View {
     func onScrollWheel(_ f: @escaping (Double) -> Void) -> some View { overlay(ScrollCatcher(onScroll: f)) }
+}
+
+// MARK: - v18: the chat with Claude for the chosen knob (Chat.swift)
+
+private let readme = URL(string: "https://github.com/markoboskoauroville/oxi-controller#the-anthropic-key-and-the-chat")!
+
+struct ChatView: View {
+    @EnvironmentObject var e: Engine
+    let i: Int
+    @State private var draft = ""
+    var body: some View {
+        let turns = e.chats[i] ?? []
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("KNOB \(i + 1) · \(e.knobs[i].name)").font(.system(.callout, design: .monospaced).bold())
+                Spacer()
+                Button("SEND PROMPT") { e.send(e.knobs[i].note, knob: i) }.disabled(e.knobs[i].note.isEmpty || e.asking != nil)
+                Button("CLEAR") { e.clearChat(i) }.disabled(turns.isEmpty)
+            }
+            ScrollViewReader { sv in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if turns.isEmpty {
+                            Text("Write what this knob should do in its prompt (LIST view) and press Return, or write here. Claude says whether the app can do it, applies nothing by itself, and says what the app would need when it cannot.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        ForEach(turns) { t in Bubble(t: t, i: i).id(t.id) }
+                        if e.asking == i { Text("Claude is thinking…").font(.caption).foregroundStyle(.secondary).id("wait") }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onChange(of: turns.count) { _, _ in if let l = turns.last { sv.scrollTo(l.id, anchor: .bottom) } }
+            }
+            HStack {
+                TextField("answer Claude…", text: $draft, axis: .vertical).textFieldStyle(.roundedBorder)
+                    .onSubmit { e.send(draft, knob: i); draft = "" }
+                Button("SEND") { e.send(draft, knob: i); draft = "" }.disabled(draft.isEmpty || e.asking != nil)
+            }
+        }
+    }
+}
+
+private struct Bubble: View {
+    @EnvironmentObject var e: Engine
+    let t: ChatTurn
+    let i: Int
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if t.fromMarko {
+                Text(t.text).foregroundStyle(noteBlue)
+            } else {
+                if let v = t.verdict {
+                    Text(v.uppercased()).font(.caption.bold())
+                        .foregroundStyle(v == "possible" ? .green : v == "partly" ? .yellow : .red)
+                }
+                Text(t.text)
+                if let n = t.needs { Text("To make it possible: " + n).font(.caption).foregroundStyle(.secondary) }
+                if t.turnRole != nil || t.pushRole != nil {
+                    HStack {
+                        Text([t.turnRole.map { "TURN: " + $0 }, t.pushRole.map { "PUSH: " + $0 }].compactMap { $0 }.joined(separator: " · "))
+                            .font(.caption.monospaced()).foregroundStyle(orange)
+                        Button(t.applied ? "APPLIED" : "APPLY") { e.apply(t, knob: i) }.disabled(t.applied)
+                    }
+                }
+            }
+        }
+        .textSelection(.enabled)
+        .padding(6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(t.fromMarko ? Color.blue.opacity(0.08) : Color.gray.opacity(0.10)))
+    }
+}
+
+// MARK: - v18: Settings (⌘,): the Anthropic key by file picker, the model (MANTRA_MANIFEST keyring.md §6b, model-names.md)
+
+struct SettingsView: View {
+    @State private var keys = Keys.saved()
+    @State private var active = Keys.activeIndex
+    @State private var said = ""
+    @State private var inForce = Keys.current()?.from ?? "none"
+    @State private var family = Models.family
+    @State private var model = ""
+    var body: some View {
+        Form {
+            Section("ANTHROPIC KEY") {
+                HStack {
+                    Button("Choose key files…") { pick() }
+                    Link("How the key is found (README)", destination: readme)
+                }
+                if !said.isEmpty { Text(said).font(.caption).fixedSize(horizontal: false, vertical: true) }
+                if keys.isEmpty {
+                    Text("No key picked. The app then looks, in order, at ANTHROPIC_API_KEY, `keyring get anthropic` and the notes in ~/Downloads/API.").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Picker("In force", selection: $active) {
+                        ForEach(keys.indices, id: \.self) { n in
+                            Text("Anthropic · key \(n + 1) of \(keys.count)" + (keys[n].title.isEmpty ? "" : " · \(keys[n].title)") + " · \(keys[n].source)").tag(n)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+                    .onChange(of: active) { _, v in Keys.activeIndex = v; Models.resolved = nil; refresh() }
+                    Button("Remove the key in force") {
+                        var k = keys; k.remove(at: min(active, k.count - 1)); Keys.save(k); Keys.activeIndex = 0; refresh()
+                    }
+                }
+                Text("In use now: \(inForce)").font(.caption)
+            }
+            Section("MODEL") {
+                Picker("Family", selection: $family) {
+                    Text("Opus (the most careful)").tag("opus"); Text("Sonnet").tag("sonnet"); Text("Haiku (the fastest, cheapest)").tag("haiku")
+                }
+                .onChange(of: family) { _, v in Models.family = v; resolve() }
+                Text(model.isEmpty ? "asking the API…" : "Works with \(model)").font(.caption)
+            }
+        }
+        .formStyle(.grouped)
+        .frame(width: 520, height: 420)
+        .onAppear { resolve() }
+    }
+    private func refresh() { keys = Keys.saved(); active = min(Keys.activeIndex, max(0, keys.count - 1)); inForce = Keys.current()?.from ?? "none" }
+    private func resolve() { model = ""; Models.resolve { m, why in DispatchQueue.main.async { model = m == nil ? why : why } } }
+    private func pick() {
+        let p = NSOpenPanel()
+        p.allowsMultipleSelection = true; p.canChooseDirectories = false
+        p.directoryURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads/API")
+        p.message = "Choose the notes that hold your Anthropic keys (other text in them is fine)"
+        if p.runModal() == .OK { said = Keys.importFiles(p.urls); Models.resolved = nil; refresh(); resolve() }
+    }
 }

@@ -472,6 +472,42 @@ final class Engine: ObservableObject {
 
     func edited() { ringsDue = true; drawLabels() }
 
+    // MARK: v18, the chat with Claude for every knob (Chat.swift)
+
+    @Published var chats: [Int: [ChatTurn]] = Chats.load()
+    @Published var asking: Int? = nil
+    @Published var side = "setup"           // the panel beside the knobs: SETUP or CHAT
+
+    /// The knob's setup in words, for Claude.
+    func currentSetup(_ i: Int) -> String {
+        "knob \(i + 1), named \(knobs[i].name); turn role \(knobs[i].turnRole.rawValue) (\(turnText(i))); push role \(knobs[i].pushRole.rawValue) (\(pushText(i)))"
+    }
+
+    /// Marko's message (the prompt, or a reply in the chat) goes to Claude with the whole conversation of that knob.
+    func send(_ text: String, knob i: Int) {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, asking == nil else { return }
+        chats[i, default: []].append(ChatTurn(fromMarko: true, text: t)); Chats.save(chats)
+        asking = i
+        Chats.ask(history: chats[i] ?? [], current: currentSetup(i)) { [weak self] answer in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.chats[i, default: []].append(answer); Chats.save(self.chats); self.asking = nil
+            }
+        }
+    }
+
+    /// APPLY on Claude's answer: only roles the app knows (Chats.ask already dropped any other).
+    func apply(_ turn: ChatTurn, knob i: Int) {
+        if let r = turn.turnRole.flatMap(KnobSetup.TurnRole.init(rawValue:)) { knobs[i].turnRole = r }
+        if let r = turn.pushRole.flatMap(KnobSetup.PushRole.init(rawValue:)) { knobs[i].pushRole = r }
+        if let n = chats[i]?.firstIndex(where: { $0.id == turn.id }) { chats[i]?[n].applied = true; Chats.save(chats) }
+        edited(); save()
+    }
+
+    func clearChat(_ i: Int) { chats[i] = []; Chats.save(chats) }
+
+
     /// The first profile, AUTOMATION (Marko, 26.10.2026): knob 1 tracks / automation view, knob 2 a parameter's CC
     /// / automation record, knob 3 scrub / play-stop; the others plain MIDI.
     private var following = false
