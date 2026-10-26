@@ -146,7 +146,10 @@ final class E16Port {
     private func receive(_ list: UnsafePointer<MIDIEventList>) {
         // MIDI 1.0 words: 0x2 = channel voice (3 bytes), 0x3 = SysEx 7 in 6-byte packets
         for packet in list.unsafeSequence() {
-            let words = Array(UnsafeBufferPointer(start: withUnsafePointer(to: packet.pointee.words) { UnsafeRawPointer($0).assumingMemoryBound(to: UInt32.self) }, count: Int(packet.pointee.wordCount)))
+            // MEASURED 26.10.2026: a pointer to `words` taken inside withUnsafePointer and used after it pointed at a
+            // copy already gone: every word read 0 (no turn, no push, never the ACK). The words copied out inside.
+            let count = Int(packet.pointee.wordCount)
+            let words: [UInt32] = withUnsafeBytes(of: packet.pointee.words) { Array($0.bindMemory(to: UInt32.self).prefix(count)) }
             var i = 0
             while i < words.count {
                 let w = words[i]

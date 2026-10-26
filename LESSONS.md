@@ -6,3 +6,11 @@
 2. **Labels and rings need the 8-to-7 packing too**: a leading 0 byte before every 7 bytes. Without it nothing shows
    (schwung E16_REMOTE.md; the bytes never set bit 7, so the header is always 0 there, but it must be there).
 3. **Exit or it stays blank**: Remote Mode holds until EXIT (`06 00`) or a power cycle.
+
+## A pointer out of withUnsafePointer reads a copy that is gone (26.10.2026)
+
+`withUnsafePointer(to: packet.pointee.words) { $0 }` hands out a pointer to a temporary copy of the tuple; used after
+the closure it read 0 for every word. Every turn, every push and the Remote Mode ACK were lost the whole day ("no ACK
+recognised", the knobs did nothing in the app), while the device itself worked. Copy the words out inside:
+`withUnsafeBytes(of: packet.pointee.words) { Array($0.bindMemory(to: UInt32.self).prefix(count)) }`. Proof it works:
+`e16looks show` now says "remote mode: entered (ACK)".
