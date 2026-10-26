@@ -144,3 +144,13 @@
 > "In that case, please change the underlined text in my notes. Where my notes are now, show the prompt instead. I also need settings. They should have a file picker for the Anthropic key, and a way to choose the model that does the work. Keep the fallback for finding the key, the same as always. It has to work when the file has other text in it. We have certain standards for this, so please check the Mantra Manifest for how we read and parse keys. I would rather you follow that than invent something new." (Marko, 26.10.2026)
 
 30. The note field becomes PROMPT; SETTINGS: a file picker for the Anthropic key (the usual fallback when none is picked; the key found in a file that holds other text too, the manifest's way) and the model that does the work. — **Status:** in work.
+
+## 31. 26.10.2026: public repository, README for the key, "impossible" answers, a chat per knob
+
+> You also need to create a public repository for this. It's already public, I guess, and that's okay, it can stay public.
+>
+> Then an Anthropic key needs to be pointed to the README, in case something is not clear. There should be a README or a handover note that explains how this thing works.
+>
+> Also, if I ask for something that is impossible, please tell me it is impossible, or what we would need to change in the app to make it possible. I can ask for things that are not possible.
+>
+> In that case, you need to build a chat interface inside this, so there is back and forth communication for a certain prompt or button. That way we can develop it through different testing phases, going back and forth.
