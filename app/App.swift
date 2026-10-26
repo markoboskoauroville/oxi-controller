@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 22
+let VERSION = 23
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -116,7 +116,7 @@ struct Main: View {
                 }
                 .frame(minWidth: 300, maxWidth: 400)
             }
-            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn or push the knob, and write what it does with ✎. Every knob has its own numbers: knob 1 is CC 1 and note 1, knob 16 is CC 16 and note 16, the next page goes on from 17, channel 1 up to 112, then channel 2. Shift on the E16 shows the values and turns the knobs finer; Shift + knob 16 turns the pages.")
+            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn or push the knob, and write what it does with ✎. Every knob has its own numbers: knob 1 is CC 1 and note 1, knob 16 is CC 16 and note 16, the next page goes on from 17, channel 1 up to 112, then channel 2. Shift on the E16 shows the values and turns the knobs finer; Tap Shift twice to choose a page: knobs 1–15 jump to their page, knob 16 turns one page on or back; tap Shift twice again to play.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)

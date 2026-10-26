@@ -202,3 +202,7 @@
 ## 37. 26.10.2026: pages by direct access, not by arrows
 
 > lllllllnow the camera is fixed. You can continue developing. I don't like this way of navigating the pages. It must be direct access to the page number. The last button in the row number 16 is turning to change the pages, and each button press is jumping to the certain page. It's like turning and pressing. To access the page, scrolling is again the same: double-click to enter and double-click to exit the Shift key
+
+## 38. 26.10.2026: profiles placed on pages
+
+> this app can define the span of pages. I don't know how to call it. You help me. We have automation now. We save it. We recall it. Profile, yes. Each profile can be assigned to the range of pages. Instead of recalling the presets, I can store them on the page, and then by turning the page and naming the page, I can directly do everything from my device, not using the DJ Mantra Ableton Remote for Oxi E16 version 23 or more versions. Please make this possible in the setting of each profile, so that I can assign it the fixed page inside the device

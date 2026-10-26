@@ -339,7 +339,7 @@ final class Engine: ObservableObject {
         if kind == 0xB0, b[1] == 16, shift { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
         if helpPage != nil, kind == 0xB0 || (kind == 0x90 && b[2] > 0) { helpPage = nil }
         if navMode {
-            if kind == 0xB0, Engine.navMiddle.contains(Int(b[1]) - 1) { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
+            if kind == 0xB0, b[1] == 16 { let raw = Int(b[2]); goTo(page: page + (raw < 64 ? 1 : -1)); return }
             if kind == 0x90, b[2] > 0, b[1] < 16 { navPress(Int(b[1])); return }
             if !(b[1] == 16 && (kind == 0x90 || kind == 0x80)) { return }
         }
@@ -494,10 +494,13 @@ final class Engine: ObservableObject {
     private func flushRings() {
         guard ringsDue, connected, !presenting, let e16 else { return }
         ringsDue = false
-        if navMode {   // the cross: arms orange, full; the middle white; the corners dark
-            let arms = Engine.navLeft.union(Engine.navRight).union(Engine.navUp).union(Engine.navDown)
+        if navMode {   // v23: the page you are on white, pages in use orange, the rest dark; knob 16 orange, turning
             e16.send(E16Message.rings((0..<16).map { i in
-                arms.contains(i) ? Ring(r: 127, g: 60, b: 0, amount: 1) : Engine.navMiddle.contains(i) ? Ring(r: 110, g: 110, b: 110, amount: 1) : Ring(r: 0, g: 0, b: 0, amount: 0)
+                if i == 15 { return Ring(r: 127, g: 60, b: 0, amount: 1) }
+                let p = bankStart + i
+                if p == page { return Ring(r: 120, g: 120, b: 120, amount: 1) }
+                if p <= lastPage { return Ring(r: 127, g: 60, b: 0, amount: 0.35) }
+                return Ring(r: 0, g: 0, b: 0, amount: 0)
             }))
             return
         }
@@ -515,7 +518,7 @@ final class Engine: ObservableObject {
     /// their names; with Shift held, their values.
     func drawLabels() {
         guard connected, !presenting, let e16 else { return }
-        if navMode { e16.send(E16Message.framebuffer(Screen.nav(page: page, of: KnobSetup.pageCount, last: lastPage))); return }
+        if navMode { e16.send(E16Message.framebuffer(Screen.grid(navCells(), touched: page - bankStart))); return }
         guard Date() >= messageUntil else { return }
         // v22 (Marko, 26.10.2026: "removing the title ... all the space for my custom labels"): two lines a knob; with
         // Shift held the first line is the knob's value
@@ -526,32 +529,43 @@ final class Engine: ObservableObject {
         e16.send(E16Message.framebuffer(Screen.grid(cells, touched: lastTouched)))
     }
 
-    // MARK: v22, the page cross (Marko, 26.10.2026: "I tap the Shift key 2 times, and I enter a special mode to navigate
-    // the pages ... paint a cross with the light ... All buttons on the left side are the left arrow, all buttons on the
-    // right side are the right arrow, all buttons above the middle are the up arrow, and all buttons below the middle
-    // are the down arrow. The 4 in the middle are for turning")
+    // MARK: v23, the page picker (Marko, 26.10.2026: "It must be direct access to the page number. The last button in
+    // the row number 16 is turning to change the pages, and each button press is jumping to the certain page. It's like
+    // turning and pressing ... double-click to enter and double-click to exit the Shift key"). Replaces v22's cross.
+    //   knobs 1-15: pushed, the page they show (15 pages at a time: 1-15, 16-30 ...); lit, the pages in use, white
+    //               the page you are on
+    //   knob 16:    turned, one page on or back; the fifteen follow when it passes their end
+    //   Shift twice: in and out
 
     @Published var navMode = false
     private var lastShiftTap = Date.distantPast
     private var messageUntil = Date.distantPast
-    static let navLeft: Set<Int> = [4, 8], navRight: Set<Int> = [7, 11], navUp: Set<Int> = [1, 2], navDown: Set<Int> = [13, 14]
-    static let navMiddle: Set<Int> = [5, 6, 9, 10]
-    /// The last page in use: the highest page opened or set up (up arrow).
+    /// The last page in use: the highest page opened or set up.
     var lastPage: Int { pages.count - 1 }
+    /// The first of the fifteen pages the knobs show now.
+    var bankStart: Int { (page / 15) * 15 }
 
     func setNav(_ on: Bool) {
         navMode = on; lastTouched = nil
-        status = on ? "PAGES: ◀ ▶ one page, ▲ the last page in use, ▼ page 1, turn the middle to flip, push the middle or tap Shift twice to leave" : pageLine()
+        status = on ? "PAGES: push knobs 1-15 for a page, turn knob 16 for the next or the one before; tap Shift twice to leave" : pageLine()
         drawAll()
     }
 
-    /// A push while the cross is lit.
+    /// A push while choosing a page: knobs 1-15 jump to their page.
     private func navPress(_ i: Int) {
-        if Engine.navLeft.contains(i) { goTo(page: page - 1) }
-        else if Engine.navRight.contains(i) { goTo(page: page + 1) }
-        else if Engine.navUp.contains(i) { goTo(page: lastPage) }
-        else if Engine.navDown.contains(i) { goTo(page: 0) }
-        else if Engine.navMiddle.contains(i) { setNav(false) }
+        guard i < 15 else { return }
+        goTo(page: bankStart + i)
+    }
+
+    /// The screen while choosing: the fifteen page numbers in the knobs' places, the one you are on inverted.
+    func navCells() -> [(String, String)] {
+        (0..<16).map { i in
+            if i == 15 { return ("TURN", "PAGES") }
+            let p = bankStart + i
+            guard p < KnobSetup.pageCount else { return ("", "") }
+            let (ch, n) = KnobSetup.numbers(p * 16)
+            return ("P\(p + 1)", p <= lastPage ? (ch > 1 ? "CH\(ch)" : "\(n)") : "")
+        }
     }
 
     // MARK: PRESENT THE OXI
