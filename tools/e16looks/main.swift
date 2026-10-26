@@ -6,6 +6,7 @@
 //   e16looks list            the stored looks
 //   e16looks show NAME       recall one onto the device (Remote Mode)
 //   e16looks cycle [s=4]     recall each in turn, s seconds apiece, then give the device back
+//   e16looks present [s]     PRESENT THE OXI: the light show, s seconds (0: until Ctrl-C), then the device back
 //   e16looks exit            give the device back (EXIT REMOTE MODE; otherwise it stays blank)
 //
 // Looks live in ~/Library/Application Support/Oxi Controller/looks/<NAME>.json, one Look each (E16Remote.swift).
@@ -65,11 +66,22 @@ case "seed":
     seed()
 case "list":
     print(all().isEmpty ? "no looks yet: e16looks seed" : all().joined(separator: "\n"))
+case "present":
+    // PRESENT THE OXI (Marko, 26.10.2026): the light show for [seconds] (0: until Ctrl-C), then the device back
+    guard let e16 = E16Port() else { print("e16looks: the OXI E16 (USB1) is not on CoreMIDI"); exit(1) }
+    print(e16.enterSigned() ? "remote mode: entered (ACK)" : "remote mode: sent ENTER, no ACK recognised — going on")
+    var stopped = false
+    signal(SIGINT, SIG_IGN)
+    let sig = DispatchSource.makeSignalSource(signal: SIGINT, queue: .global()); sig.setEventHandler { stopped = true }; sig.resume()
+    let secs = Double(args.count > 1 ? args[1] : "0") ?? 0
+    print("PRESENT THE OXI: \(Present.pictures.count) pictures" + (secs > 0 ? ", \(Int(secs)) s" : ", Ctrl-C ends"))
+    e16.present(seconds: secs, stop: { stopped })
+    e16.exitRemote(); print("given back")
 case "show", "cycle", "exit":
     guard let e16 = E16Port() else { print("e16looks: the OXI E16 (USB1) is not on CoreMIDI"); exit(1) }
     if args.first == "exit" { e16.exitRemote(); print("given back"); exit(0) }
     // MEASURED 26.10.2026: the device blanked (it entered) while the ACK was not recognised here; go on and say so
-    print(e16.enterRemote() ? "remote mode: entered (ACK)" : "remote mode: sent ENTER, no ACK recognised — going on")
+    print(e16.enterSigned() ? "remote mode: entered (ACK)" : "remote mode: sent ENTER, no ACK recognised — going on")
     if args.first == "show" {
         let name = args.dropFirst().joined(separator: " ")
         guard let look = load(name) else { print("no look \(name): " + all().joined(separator: ", ")); exit(1) }
@@ -80,5 +92,5 @@ case "show", "cycle", "exit":
         e16.exitRemote(); print("given back")
     }
 default:
-    print("e16looks seed | list | show NAME | cycle [seconds] | exit")
+    print("e16looks seed | list | show NAME | cycle [seconds] | present [seconds] | exit")
 }

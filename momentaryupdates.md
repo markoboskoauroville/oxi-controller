@@ -36,7 +36,7 @@
 
 > "can you name this project DJ Mantra Ableton Remote for Oxi E16? And please write the name of the app on the matrix screen when we boot up, so it's with signature" (Marko, 26.10.2026)
 
-10. The project is called DJ MANTRA ABLETON REMOTE for OXI E16; its name shown on the E16's screen at every start, a signature. — **Status:** asked.
+10. The project is called DJ MANTRA ABLETON REMOTE for OXI E16; its name shown on the E16's screen at every start, a signature. — **Status:** done: the signature (DJ MANTRA / ABLETON REMOTE / for OXI E16, 06 02 framebuffer, 2 s) at every entry to Remote Mode, the tool and the app; seen through the Pixel camera. The CoreMIDI client is called DJ Mantra Ableton Remote; the README carries the name.
 
 - 26.10.2026: OXI asked for developer access (the .oxie16 format, the full Remote Mode spec, any E16 editor source, firmware plans): email sent from marko.bosko@gmail.com to support@oxiinstruments.com (the address on oxiinstruments.com/contact) on Marko's yes. GitHub before that: OXI's E16 app is closed (OXI-Desktop-APP holds only a README); open: oxi_midi_import (MIT, Dart), OXIWave (GPL, Coral); community: charlesvestal/oxi-e16-lua (MIT, Lua, glyphs, field notes), buba447/OXI-E16-Patcher and brentvatne/oxi-e16-config (scene files, no license).
 
@@ -46,4 +46,4 @@
 
 > "in the meantime, test the camera and build the Oxi control as much as you can" (Marko, 26.10.2026)
 
-12. The app (Swift): the E16's brain in Remote Mode: a setup per knob (name, colour, turn: CC/channel/range/speed; push: toggle or momentary, note or CC), the rings and the screen drawn by the app, MIDI to Ableton through its own virtual port "DJ Mantra Remote", setups saved and recalled, PRESENT THE OXI, the signature at start, the E16 given back on quit. — **Status:** in work.
+12. The app (Swift): the E16's brain in Remote Mode: a setup per knob (name, colour, turn: CC/channel/range/speed; push: toggle or momentary, note or CC), the rings and the screen drawn by the app, MIDI to Ableton through its own virtual port "DJ Mantra Remote", setups saved and recalled, PRESENT THE OXI, the signature at start, the E16 given back on quit. — **Status:** v1 built and running (app/Engine.swift, app/App.swift, build.sh): seen on the E16: the signature, then MY SETUP and K1…K16; the port "DJ Mantra Remote" on CoreMIDI. A turn and a push on the device not yet tried (Marko's hand).

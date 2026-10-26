@@ -82,7 +82,7 @@ final class E16Port {
     var onMessage: (([UInt8]) -> Void)?
 
     init?(port: Int = 1) {
-        MIDIClientCreateWithBlock("Oxi Controller" as CFString, &client, nil)
+        MIDIClientCreateWithBlock("DJ Mantra Ableton Remote" as CFString, &client, nil)
         MIDIOutputPortCreate(client, "out" as CFString, &out)
         guard let d = E16Port.endpoint(destinations: true, port: port) else { return nil }
         destination = d

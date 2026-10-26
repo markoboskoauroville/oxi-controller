@@ -1,3 +1,19 @@
+# DJ Mantra Ableton Remote for OXI E16
+
+**The OXI E16 as the Mac's own controller for Ableton Live.** (Marko, 26.10.2026: "can you name this project DJ Mantra
+Ableton Remote for Oxi E16?") The app holds the E16 in Remote Mode and is its brain: every knob has a setup (name,
+colour, what a turn sends: CC, channel, range, speed; what a push does: toggle or momentary, a note or a CC), the
+rings and the screen are drawn from the values, and the result goes to Live through the app's own MIDI port
+**"DJ Mantra Remote"**. Setups are saved and recalled. **PRESENT THE OXI** is the light show: the sixteen knobs as a
+4 × 4 picture, 22 pictures crossfading in turning colours, the same picture on the screen. The app's name is on the
+E16's screen at every start, its signature.
+
+- App: `./build.sh` → /Applications/DJ Mantra Ableton Remote.app (v1, signed "Mantra Apps").
+- Tool: `build/e16looks seed | list | show NAME | cycle 4 | present [s] | exit`.
+- Setups: ~/Library/Application Support/DJ Mantra Ableton Remote/setups/<NAME>.json.
+
+---
+
 # Oxi Controller
 
 A Mac app (Swift) for the **OXI Instruments E16**: presets the E16 can load to drive **Ableton Live**, with every change
