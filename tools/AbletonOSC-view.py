@@ -41,10 +41,14 @@ class ViewHandler(AbletonOSCHandler):
         self._dj_param = None
         self._dj_seen = None
 
+        def key(p):
+            # Live hands out a new Python wrapper at every access: the object behind it is told by its _live_ptr
+            return getattr(p, "_live_ptr", None) if p is not None else None
+
         def current_parameter():
             live = self.song.view.selected_parameter
-            if live is not self._dj_seen:
-                self._dj_seen = live
+            if key(live) != self._dj_seen:
+                self._dj_seen = key(live)
                 self._dj_param = None
             return self._dj_param if self._dj_param is not None else live
 
@@ -72,14 +76,12 @@ class ViewHandler(AbletonOSCHandler):
             plist = list(getattr(device, "parameters", []))
             if not plist:
                 return selected_parameter_info()[1]
-            try:
-                i = plist.index(base)
-            except ValueError:
-                i = 0
+            keys = [key(x) for x in plist]
+            i = keys.index(key(base)) if key(base) in keys else 0
             n = int(params[0]) if params else 1
             self._dj_param = plist[max(0, min(len(plist) - 1, i + (1 if n > 0 else -1)))]
             p, info = selected_parameter_info()
-            return info + ("%d/%d" % (plist.index(p) + 1, len(plist)),)
+            return info + ("%d/%d" % (keys.index(key(p)) + 1 if key(p) in keys else 0, len(plist)),)
 
         self.osc_server.add_handler("/live/view/step_parameter", step_parameter)
 

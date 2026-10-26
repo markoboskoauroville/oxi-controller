@@ -14,3 +14,9 @@ the closure it read 0 for every word. Every turn, every push and the Remote Mode
 recognised", the knobs did nothing in the app), while the device itself worked. Copy the words out inside:
 `withUnsafeBytes(of: packet.pointee.words) { Array($0.bindMemory(to: UInt32.self).prefix(count)) }`. Proof it works:
 `e16looks show` now says "remote mode: entered (ACK)".
+
+## Live's Python objects are new at every access (26.10.2026)
+
+`song.view.selected_parameter` returns a fresh wrapper each time: `a is b` is false for the same parameter, and
+`list.index()` may miss it. Tell Live objects apart by `_live_ptr` (the C++ object behind the wrapper). Found when
+knob 4's parameter pointer was reset at every step.

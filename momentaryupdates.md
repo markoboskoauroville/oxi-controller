@@ -100,3 +100,7 @@
 > "yes, knob for work in a clip view fantastic. It resets when I press, and I can change the pitch by turning the knob" (Marko, 26.10.2026)
 
 - CLIP PITCH confirmed by hand 26.10.2026: turning changes the clip's pitch in Clip View, a push resets it to zero.
+
+> "I did turn the knob. I selected its frequency in EQ8, and then I was expecting that with the four, I'm going to go to another parameter, but it didn't happen" (Marko, 26.10.2026)
+
+- Why: Live hands out a new Python wrapper at every access, so `live is not self._dj_seen` was always true and the pointer was reset at every step. Fixed: Live objects compared by `_live_ptr`. Tested: EQ Eight 3 Frequency A → 3 Gain A (28/84) → 3 Q A → 3 Filter On B → back; the read follows. Lesson in LESSONS.md.
