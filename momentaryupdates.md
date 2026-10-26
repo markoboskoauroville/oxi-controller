@@ -47,3 +47,7 @@
 > "in the meantime, test the camera and build the Oxi control as much as you can" (Marko, 26.10.2026)
 
 12. The app (Swift): the E16's brain in Remote Mode: a setup per knob (name, colour, turn: CC/channel/range/speed; push: toggle or momentary, note or CC), the rings and the screen drawn by the app, MIDI to Ableton through its own virtual port "DJ Mantra Remote", setups saved and recalled, PRESENT THE OXI, the signature at start, the E16 given back on quit. — **Status:** v1 built and running (app/Engine.swift, app/App.swift, build.sh): seen on the E16: the signature, then MY SETUP and K1…K16; the port "DJ Mantra Remote" on CoreMIDI. A turn and a push on the device not yet tried (Marko's hand).
+
+> "I give you a trial setup so you can try it inside Ableton Live. The first profile should work like this: - The upper-left knob is turning and selecting tracks up or down. - Pressing on that knob opens the channel automation lane. - The second button exchanges the automation parameter, and pressing it creates the key frame in the automation line. - The third button is scrubbing the timeline. When I press it, it's stop/play. We need to use MIDI protocol. Let's test this kind of setup" (Marko, 26.10.2026)
+
+13. The first profile, LIVE AUTOMATION: knob 1 turn = select the track up/down, push = open its automation lane; knob 2 turn = the next/previous automation parameter, push = a breakpoint (key frame) on the automation line; knob 3 turn = scrub the timeline, push = play/stop. Over MIDI. — **Status:** in work.
