@@ -218,3 +218,7 @@
 - **36** (two lines a knob, no title): **done, v22.** The app draws the screen itself, and Live's answers show big for 2 s. The page cross was **replaced in v23**.
 - **37** (direct page access): **done, v23.** Tap Shift twice to enter: knob 16 turns the pages, pushes 1–15 jump to a page, and Shift twice exits. Seen on the E16 through the Mantra Manual Camera.
 - **38** (profiles on pages): **done, v24.** PROFILES… → PLACE puts a profile on a page; page names are kept in layout.json, which is loaded at start. Seen on the E16: P1 and P5 named AUTOM. Marko still has to try it with his own hand.
+
+## 39. 26.10.2026: in the star, in Applications, found by typing "Oxi"
+
+> come on, make my Oxi application part of the Start Menu and put it in the Application folder. When I type "Oxi" to search, beside the original app, this one must come up
