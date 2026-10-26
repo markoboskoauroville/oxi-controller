@@ -184,3 +184,17 @@
 > We already have a predictable situation. The only thing that is customizable is the color of each LED ring, and that is in the settings next to each knob.
 >
 > Please add a color picker with all the available colors, so the user can adjust the color and the intensity of the ring.
+
+## 36. 26.10.2026: two lines a knob on the screen, no title; Shift twice for the page cross
+
+> In our app, the user can adjust the text written on the matrix display for each knob. So now we are removing the title of the preset, because I want to use all the space for my custom labels on each knob.
+>
+> It needs to have 2 labels, turn and press. We can maybe make it 2 lines, so the first line is turning and the second line is pressing. Then I don't need the T and P labels.
+>
+> To turn pages, we can do it the same as in the original app. I tap the Shift key 2 times, and I enter a special mode to navigate the pages. Then I can use 4 arrows. The middle button on the left side is the left arrow, the middle button on the right side is the right arrow, the top button in the middle is the up arrow, and the bottom button in the middle is the down arrow. You just need to make a light around it so I understand what I need to press.
+>
+> Pressing left arrow takes me one step back, and right arrow one step forward. Up arrow goes to the last page, and down arrow to this page.
+>
+> Is there something more useful for navigation? You can invent it. Maybe I can turn the middle knob to go back and forth.
+>
+> Or maybe you can paint a cross with the light, so we have 2 middle lines going down and 2 middle lines going left and right, like we have one row and one column. All buttons on the left side are the left arrow, all buttons on the right side are the right arrow, all buttons above the middle are the up arrow, and all buttons below the middle are the down arrow. The 4 in the middle are for turning, instead of pressing. to see how the controller looks, please use my mantra camera, the mantra manual camera, not iriun
