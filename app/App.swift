@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 11
+let VERSION = 12
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -42,6 +42,7 @@ struct Main: View {
             HStack(spacing: 8) {
                 Button(e.connected ? "GIVE BACK" : "CONNECT") { e.connected ? e.giveBack() : e.connect() }
                 Button(e.presenting ? "STOP THE SHOW" : "PRESENT THE OXI") { e.togglePresent() }.disabled(!e.connected)
+                Button(e.statusLineOn ? "LIVE STATUS LINE: ON" : "LIVE STATUS LINE: OFF") { e.toggleStatusLine() }
                 Spacer()
                 TextField("setup", text: $e.setupName).frame(maxWidth: 180)
                 Button("SAVE") { e.save() }

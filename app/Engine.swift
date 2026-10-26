@@ -15,7 +15,7 @@ struct KnobSetup: Codable, Equatable {
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
     /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
     enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER", selected = "SELECTED", clipPitch = "CLIP PITCH", paramStep = "PARAMETER STEP" }
-    enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP", pitchZero = "PITCH TO ZERO" }
+    enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP", pitchZero = "PITCH TO ZERO", statusLine = "STATUS LINE" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
     var cc: Int                                 // what a turn sends
@@ -144,6 +144,7 @@ final class Engine: ObservableObject {
             case .automationView: push = "Pushing shows or hides the automation lanes of the tracks in Live's arrangement."
             case .automationRecord: push = "Pushing switches automation recording on or off. While it is on, turning a mapped knob writes key frames into the automation line."
             case .playStop: push = "Pushing starts Live playing, or stops it."
+            case .statusLine: push = "Pushing closes the line at the bottom of Live's window that tells which parameter this knob is on, and the next push opens it again."
             case .pitchZero: push = "Pushing sets the clip's pitch back to zero semitones and zero cents."
             case .midi:
                 switch k.push {
@@ -277,6 +278,7 @@ final class Engine: ObservableObject {
                 case .automationView: said = Live.shared.automationView() ? "AUTOMATION VIEW (A)" : "— Live is not open"
                 case .automationRecord: said = Live.shared.automationRecord().map { $0 ? "AUTOMATION RECORD ON" : "RECORD OFF" } ?? "— Live does not answer"
                 case .playStop: said = Live.shared.playStop().map { $0 ? "PLAY" : "STOP" } ?? "— Live does not answer"
+                case .statusLine: said = Live.shared.statusLine().map { $0 ? "LIVE STATUS LINE ON" : "LIVE STATUS LINE OFF" } ?? "— Live does not answer"
                 case .pitchZero: said = Live.shared.clipPitch().map { Live.shared.nudgeClipPitch(cents: -$0.cents) } ?? "— Live does not answer"
                 case .midi: said = ""
                 }
@@ -340,6 +342,13 @@ final class Engine: ObservableObject {
     }
 
     // MARK: PRESENT THE OXI
+
+    @Published var statusLineOn = true
+
+    func toggleStatusLine() {
+        let want = !statusLineOn
+        DispatchQueue.global().async { let r = Live.shared.statusLine(want); DispatchQueue.main.async { if let r { self.statusLineOn = r; self.status = r ? "Live's status line on" : "Live's status line off" } else { self.status = "Live does not answer" } } }
+    }
 
     func togglePresent() {
         if presenting { presentStop = true; return }
@@ -431,7 +440,7 @@ final class Engine: ObservableObject {
         var k = (0..<16).map(KnobSetup.defaults)
         k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
         k[1].name = "AUTO"; k[1].turnRole = .selected; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
-        k[3].name = "PARM"; k[3].turnRole = .paramStep; (k[3].r, k[3].g, k[3].b) = (1, 0.85, 0.2)
+        k[3].name = "PARM"; k[3].turnRole = .paramStep; k[3].pushRole = .statusLine; (k[3].r, k[3].g, k[3].b) = (1, 0.85, 0.2)
         k[4].name = "PTCH"; k[4].turnRole = .clipPitch; k[4].pushRole = .pitchZero; (k[4].r, k[4].g, k[4].b) = (0.9, 0.3, 0.9)
         k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
         knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)

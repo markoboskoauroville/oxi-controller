@@ -173,7 +173,7 @@ final class Live {
     /// Automation Arm on and the Arrangement's record toggled: turning a knob mapped to a parameter then writes its
     /// key frames into the automation line (what Live's API allows; it cannot drop a breakpoint by itself).
     func automationRecord() -> Bool? {
-        send("/live/song/set/session_automation_record", 1)
+        send("/live/view/set/automation_arm", 1)                    // AbletonOSC's song handler has no Automation Arm
         let rec = (ask("/live/song/get/record_mode")?.last as? Int) ?? 0
         send("/live/song/set/record_mode", rec == 1 ? 0 : 1)
         if rec != 1, (ask("/live/song/get/is_playing")?.last as? Int) != 1 { send("/live/song/continue_playing") }
@@ -220,6 +220,12 @@ final class Live {
     func nudgeClipPitch(cents: Double) -> String {
         guard let a = ask("/live/view/nudge_clip_pitch", cents, ms: 600), a.count >= 2, let c = a[0] as? String, let t = a[1] as? String else { return "— Live does not answer" }
         return c.isEmpty ? t : "\(c.uppercased()) · \(t)"
+    }
+
+    /// v12: Live's status line (knob 4's and knob 2's place) off or on; nil: toggle. Returns whether it is on.
+    func statusLine(_ on: Bool? = nil) -> Bool? {
+        let a = on == nil ? ask("/live/view/set/status_line", ms: 500) : ask("/live/view/set/status_line", on! ? 1 : 0, ms: 500)
+        return (a?.first as? Int).map { $0 == 1 }
     }
 
     // MARK: HOVER (Marko, 26.10.2026: "I just simply cover any knob in Ableton, and when I turn the knob in my hardware,

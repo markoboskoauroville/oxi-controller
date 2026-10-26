@@ -112,3 +112,7 @@
 > "this status line is always disappearing. Please keep it always on screen" (Marko, 26.10.2026)
 
 22. The knob 4/2 line kept in Live's status bar: written again every 1.5 s. — **Status:** done (schedule_message 15 ticks in AbletonOSC view.py); seen still there 12 s after a step. Its cost: Live's own hints in that line (a hovered parameter's name) are covered between rewrites.
+
+> "can I click on it to close it? Some kind of closing of that status with my own will" (Marko, 26.10.2026)
+
+23. Closing the status line at will: Live does not tell a script about a click on its status bar; so push knob 4 (and a button in the app) switches the line off and on. — **Status:** v12: push knob 4 = the line off (Marko: "pushing the knob is the good choice"); the next step of knob 4 shows it again; LIVE STATUS LINE ON/OFF in the app. Found on the way: each reload of AbletonOSC left the old handler's loop rewriting its old line, so "off" did not take; now every old ViewHandler is silenced (gc) and only the newest loops. Seen: off → the bar empty. Also: Automation Arm was never set (AbletonOSC has no session_automation_record: "Unknown OSC address" in its log) → /live/view/set/automation_arm added, knob 2's push uses it (read back: 1); AbletonOSC's log (97 MB) set to warnings.

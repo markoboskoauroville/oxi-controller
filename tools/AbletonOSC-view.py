@@ -44,15 +44,48 @@ class ViewHandler(AbletonOSCHandler):
         # screen"): Live fades its messages, so the last one is written again every 15 ticks (about 1.5 s)
         self._dj_line = ""
         self._dj_keeping = False
+        # a reload of AbletonOSC makes a new handler while the old one's loop goes on rewriting its old line (seen
+        # 26.10.2026: "off" did not take): every old ViewHandler is silenced, and a loop runs only for the newest one
+        import gc
+        for old in gc.get_objects():
+            if type(old).__name__ == "ViewHandler" and old is not self and hasattr(old, "_dj_line"):
+                old._dj_line = ""
+                old._dj_line_on = False
+        self.manager._dj_view = self
 
         def keep_line():
-            if self._dj_line:
+            if self._dj_line and getattr(self.manager, "_dj_view", None) is self:
                 self.manager.show_message(self._dj_line)
                 self.manager.schedule_message(15, keep_line)
             else:
                 self._dj_keeping = False
 
+        # switched off and on at will (Marko, 26.10.2026: "Some kind of closing of that status with my own will")
+        self._dj_line_on = getattr(self.manager, "_dj_line_on", True)
+
+        def set_status_line(params: Optional[Tuple] = ()):
+            on = bool(int(params[0])) if params else (not self._dj_line_on)
+            self._dj_line_on = on
+            self.manager._dj_line_on = on
+            if not on:
+                self._dj_line = ""
+                self.manager.show_message("")
+            return (1 if on else 0,)
+
+        self.osc_server.add_handler("/live/view/set/status_line", set_status_line)
+
+        # Automation Arm (song.session_automation_record): AbletonOSC's song handler does not know it
+        # (log 26.10.2026: "Unknown OSC address: /live/song/get/session_automation_record")
+        def set_automation_arm(params: Optional[Tuple] = ()):
+            self.song.session_automation_record = bool(int(params[0])) if params else (not self.song.session_automation_record)
+            return (1 if self.song.session_automation_record else 0,)
+
+        self.osc_server.add_handler("/live/view/set/automation_arm", set_automation_arm)
+        self.osc_server.add_handler("/live/view/get/automation_arm", lambda params=(): (1 if self.song.session_automation_record else 0,))
+
         def say(line):
+            if not self._dj_line_on:
+                return
             self._dj_line = line
             self.manager.show_message(line)
             if not self._dj_keeping:
@@ -87,6 +120,9 @@ class ViewHandler(AbletonOSCHandler):
             return info + (float(p.value), float(p.min), float(p.max))
 
         def step_parameter(params: Optional[Tuple] = ()):
+            # stepping again shows the line again (closed by a push of knob 4 while it is not needed)
+            self._dj_line_on = True
+            self.manager._dj_line_on = True
             base = current_parameter()
             if base is None:
                 return ("", "", "")
