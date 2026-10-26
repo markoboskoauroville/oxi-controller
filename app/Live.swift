@@ -184,6 +184,14 @@ final class Live {
     // clicked in Live (song.view.selected_parameter), turned through two commands added to the local AbletonOSC
     // (abletonosc/view.py: /live/view/get/selected_parameter, /live/view/nudge_selected_parameter)
 
+    /// The selected parameter now: its device, name, value as Live writes it, and where the value sits 0…1.
+    func readSelected() -> (dev: String, name: String, text: String, frac: Double)? {
+        guard let a = ask("/live/view/get/selected_parameter", ms: 300), a.count >= 6,
+              let dev = a[0] as? String, let name = a[1] as? String, let text = a[2] as? String,
+              let v = a[3] as? Double, let lo = a[4] as? Double, let hi = a[5] as? Double, !name.isEmpty else { return nil }
+        return (dev, name, text, hi > lo ? (v - lo) / (hi - lo) : 0)
+    }
+
     func nudgeSelected(by step: Double) -> String {
         guard let a = ask("/live/view/nudge_selected_parameter", step, ms: 600), a.count >= 3,
               let dev = a[0] as? String, let name = a[1] as? String, let value = a[2] as? String else { return "— Live does not answer" }

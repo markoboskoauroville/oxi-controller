@@ -85,6 +85,9 @@ final class Engine: ObservableObject {
         if let last = UserDefaults.standard.string(forKey: "lastSetup"), let s = load(last) { apply(s) }
         // the rings at most 30 times a second, whatever the knobs do
         Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in self?.flushRings() }
+        // v8 (Marko, 26.10.2026: "our device is reading selected parameters ... it shows the value with an LED ... If I
+        // click on other parameters, the value is read from that parameter"): a SELECTED knob's ring follows Live
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in self?.followSelected() }
     }
 
     // MARK: the device
@@ -371,6 +374,30 @@ final class Engine: ObservableObject {
 
     /// The first profile, AUTOMATION (Marko, 26.10.2026): knob 1 tracks / automation view, knob 2 a parameter's CC
     /// / automation record, knob 3 scrub / play-stop; the others plain MIDI.
+    private var following = false
+    private var lastSelectedName = ""
+
+    private func followSelected() {
+        guard connected, !presenting, !following, let i = knobs.firstIndex(where: { $0.turnRole == .selected }) else { return }
+        following = true
+        DispatchQueue.global().async {
+            let r = Live.shared.readSelected()
+            DispatchQueue.main.async {
+                self.following = false
+                guard let r else { return }
+                let k = self.knobs[i]
+                let v = Double(k.low) + r.frac * Double(k.high - k.low)
+                if abs(v - self.values[i]) > 0.2 { self.values[i] = v; self.ringsDue = true }
+                // another parameter clicked in Live: the screen names it
+                let id = r.dev + "|" + r.name
+                if id != self.lastSelectedName {
+                    if !self.lastSelectedName.isEmpty { self.showLive("\(r.dev.uppercased()) · \(r.name) · \(r.text)") }
+                    self.lastSelectedName = id
+                }
+            }
+        }
+    }
+
     func liveAutomationProfile() {
         var k = (0..<16).map(KnobSetup.defaults)
         k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
