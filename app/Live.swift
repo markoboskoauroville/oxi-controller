@@ -180,6 +180,43 @@ final class Live {
         return rec != 1
     }
 
+    // MARK: HOVER (Marko, 26.10.2026: "I just simply cover any knob in Ableton, and when I turn the knob in my hardware,
+    // it turns that knob. In hovering mode")
+
+    private var dragStart: CGPoint?
+    private var dragY: CGFloat = 0
+    private var dragEnd: DispatchWorkItem?
+
+    /// The control under the mouse pointer turned: Live's own gesture for every knob, slider and number box is a
+    /// vertical drag on it, so a turn becomes a small drag there (a step = [pixels] up or down), posted to Live alone:
+    /// the real pointer does not move. Steps close together are one drag; it is let go 250 ms after the last.
+    func hover(by step: Double, fine: Bool) -> String? {
+        guard let live = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier?.hasPrefix("com.ableton.live") == true }) else { return "LIVE IS NOT OPEN" }
+        if !AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary) {
+            return "ALLOW THIS APP: SYSTEM SETTINGS, ACCESSIBILITY"
+        }
+        let pid = live.processIdentifier
+        let at = CGEvent(source: nil)?.location ?? .zero
+        func post(_ type: CGEventType, _ p: CGPoint, dy: Int64 = 0) {
+            guard let e = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: p, mouseButton: .left) else { return }
+            if dy != 0 { e.setIntegerValueField(.mouseEventDeltaY, value: dy) }
+            if fine { e.flags = .maskCommand }                                // ⌘-drag: Live's fine adjustment
+            e.postToPid(pid)
+        }
+        if dragStart == nil { dragStart = at; dragY = 0; post(.leftMouseDown, at) }
+        let px = CGFloat(-step * (fine ? 1 : 3))                              // clockwise = up = more
+        dragY += px
+        post(.leftMouseDragged, CGPoint(x: dragStart!.x, y: dragStart!.y + dragY), dy: Int64(px))
+        dragEnd?.cancel()
+        let end = DispatchWorkItem { [weak self] in
+            guard let self, let s = self.dragStart else { return }
+            post(.leftMouseUp, CGPoint(x: s.x, y: s.y + self.dragY)); self.dragStart = nil
+        }
+        dragEnd = end
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: end)
+        return nil
+    }
+
     /// Live's key A, Automation Mode in the Arrangement (the lanes of the selected track shown), posted to Live alone.
     func automationView() -> Bool {
         guard let live = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier?.hasPrefix("com.ableton.live") == true }) else { return false }

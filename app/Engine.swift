@@ -14,7 +14,7 @@ struct KnobSetup: Codable, Equatable {
     enum Push: String, Codable, CaseIterable { case off = "OFF", toggle = "TOGGLE", momentary = "MOMENTARY" }
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
     /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
-    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER" }
+    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER", hover = "HOVER" }
     enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
@@ -129,6 +129,7 @@ final class Engine: ObservableObject {
             switch k.turnRole {
             case .tracks: turn = "Turning selects the track above or below in Live's arrangement."
             case .scrub: turn = "Turning moves the playhead along the timeline, a sixteenth note for every step. Hold Shift for finer steps."
+            case .hover: turn = "Hover mode: rest the mouse pointer on any knob, slider or number in Live, and turning this knob turns that control, as dragging it with the mouse would. Hold Shift for fine steps. Do not rest the pointer on a clip: the same drag would move it."
             case .parameter: turn = "Turning chooses which parameter of the selected track's device is automated; the screen names the device, the parameter and its value. Turning with Shift held changes that value in Live."
             case .midi: turn = "Turning sends control change \(k.cc) on MIDI channel \(k.channel), from \(k.low) to \(k.high), into Live through the port DJ Mantra Remote. Map it to a parameter with MIDI Map."
             }
@@ -212,6 +213,12 @@ final class Engine: ObservableObject {
                 let said = sh ? Live.shared.changeParameter(by: step * k.speed) : Live.shared.chooseParameter(by: Int(step))
                 DispatchQueue.main.async { self.showLive(said ?? "— Live does not answer") }
             }
+            return
+        case .hover:
+            // v5: the control under the mouse pointer in Live turns with this knob (Live.hover); Shift = fine (⌘-drag)
+            lastTouched = i; selected = i
+            if let said = Live.shared.hover(by: step * k.speed, fine: shift) { showLive(said) }
+            else if liveSays != "HOVER" { liveSays = "HOVER"; status = "Live: HOVER — the knob under the mouse pointer turns" }
             return
         case .midi: break
         }
@@ -360,7 +367,7 @@ final class Engine: ObservableObject {
     func liveAutomationProfile() {
         var k = (0..<16).map(KnobSetup.defaults)
         k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
-        k[1].name = "AUTO"; k[1].turnRole = .parameter; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
+        k[1].name = "AUTO"; k[1].turnRole = .hover; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
         k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
         knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)
         save(); drawAll()
