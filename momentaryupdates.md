@@ -43,3 +43,7 @@
 > "Please also ask them to add to explain how to. Update firmware for Oxi over our app. We can use also update the firmware. Why not?" (Marko, 26.10.2026)
 
 11. Firmware updates of the E16 from our app; OXI asked how (the update protocol, the firmware files). — **Status:** asked: a reply in the same thread from marko.bosko@gmail.com to support@oxiinstruments.com, 26.10.2026 (Marko chose the account).
+
+> "in the meantime, test the camera and build the Oxi control as much as you can" (Marko, 26.10.2026)
+
+12. The app (Swift): the E16's brain in Remote Mode: a setup per knob (name, colour, turn: CC/channel/range/speed; push: toggle or momentary, note or CC), the rings and the screen drawn by the app, MIDI to Ableton through its own virtual port "DJ Mantra Remote", setups saved and recalled, PRESENT THE OXI, the signature at start, the E16 given back on quit. — **Status:** in work.
