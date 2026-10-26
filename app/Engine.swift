@@ -28,8 +28,10 @@ struct KnobSetup: Codable, Equatable {
     var pushChannel: Int = 1
     var turnRole: TurnRole = .midi
     var pushRole: PushRole = .midi
+    /// v15: Marko's own note for this knob (the LIST view's text field), saved with the setup
+    var note: String = ""
 
-    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole }
+    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole, note }
     init(name: String, r: Double, g: Double, b: Double, cc: Int, channel: Int, pushNumber: Int) {
         self.name = name; self.r = r; self.g = g; self.b = b; self.cc = cc; self.channel = channel; self.pushNumber = pushNumber
     }
@@ -42,6 +44,7 @@ struct KnobSetup: Codable, Equatable {
         push = try c.decodeIfPresent(Push.self, forKey: .push) ?? .toggle; pushKind = try c.decodeIfPresent(Kind.self, forKey: .pushKind) ?? .note
         pushNumber = try c.decode(Int.self, forKey: .pushNumber); pushChannel = try c.decodeIfPresent(Int.self, forKey: .pushChannel) ?? 1
         turnRole = try c.decodeIfPresent(TurnRole.self, forKey: .turnRole) ?? .midi; pushRole = try c.decodeIfPresent(PushRole.self, forKey: .pushRole) ?? .midi
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
     }
 
     var colour: Color { Color(red: r, green: g, blue: b) }
@@ -190,6 +193,42 @@ final class Engine: ObservableObject {
             pages.append(("KNOB \(i + 1): \(k.name)", turn + " " + push))
         }
         return pages
+    }
+
+    /// v15 (Marko, 26.10.2026: "write under each of the nodes in the application: what is it doing?"): what a knob's
+    /// turn and push do, in a few words, for the window.
+    func turnText(_ i: Int) -> String {
+        if i == 15 { return "Turn: help pages on the E16" }
+        let k = knobs[i]
+        switch k.turnRole {
+        case .tracks: return "Turn: track up / down"
+        case .scrub: return "Turn: playhead, a 16th per step"
+        case .selected: return "Turn: the parameter clicked (or stepped to)"
+        case .paramStep: return "Turn: next / previous parameter"
+        case .clipPitch: return "Turn: clip pitch, 5 cents a step"
+        case .hover: return "Turn: the control under the mouse"
+        case .parameter: return "Turn: the device's parameters"
+        case .midi: return "Turn: CC \(k.cc), channel \(k.channel)"
+        }
+    }
+
+    func pushText(_ i: Int) -> String {
+        if i == 15 { return "Push: leave the help" }
+        let k = knobs[i]
+        switch k.pushRole {
+        case .automationView: return "Push: automation view (A)"
+        case .automationRecord: return "Push: automation record on / off"
+        case .playStop: return "Push: play / stop"
+        case .pitchZero: return "Push: pitch back to zero"
+        case .statusLine: return "Push: Live's status line off"
+        case .midi:
+            let what = "\(k.pushKind == .note ? "note" : "CC") \(k.pushNumber)"
+            switch k.push {
+            case .off: return "Push: nothing"
+            case .toggle: return "Push: \(what) on / off"
+            case .momentary: return "Push: \(what) while held"
+            }
+        }
     }
 
     /// The help as the screen shows it: every knob's text cut into pages that fit in readable letters.

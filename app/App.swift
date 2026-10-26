@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 14
+let VERSION = 15
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -11,7 +11,7 @@ struct DJMantraAbletonRemote: App {
     var body: some Scene {
         WindowGroup("DJ Mantra Ableton Remote for OXI E16 · v\(VERSION)") {
             Main().environmentObject(Delegate.engine)
-                .frame(minWidth: 720, minHeight: 520)
+                .frame(minWidth: 900, minHeight: 620)
         }
     }
 }
@@ -37,6 +37,7 @@ private let orange = Color(red: 1, green: 0.58, blue: 0)
 
 struct Main: View {
     @EnvironmentObject var e: Engine
+    @State private var view = UserDefaults.standard.string(forKey: "view") ?? "knobs"
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -54,13 +55,22 @@ struct Main: View {
             }
             Text(e.status).font(.system(.callout, design: .monospaced))
                 .foregroundStyle(e.connected ? .green : .secondary).fixedSize(horizontal: false, vertical: true)
+            // v15 (Marko, 26.10.2026: "Please make two views: same as an icon view, what is now, or list view")
+            Picker("", selection: $view) { Text("KNOBS").tag("knobs"); Text("LIST").tag("list") }
+                .pickerStyle(.segmented).frame(maxWidth: 220)
+                .onChange(of: view) { _, v in UserDefaults.standard.set(v, forKey: "view") }
             HStack(alignment: .top, spacing: 14) {
-                Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-                    ForEach(0..<4, id: \.self) { r in
-                        GridRow { ForEach(0..<4, id: \.self) { c in KnobCell(i: r * 4 + c) } }
+                if view == "list" {
+                    ScrollView { VStack(spacing: 6) { ForEach(0..<16, id: \.self) { i in KnobRow(i: i) } } }
+                        .frame(minWidth: 460)
+                } else {
+                    Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+                        ForEach(0..<4, id: \.self) { r in
+                            GridRow { ForEach(0..<4, id: \.self) { c in KnobCell(i: r * 4 + c) } }
+                        }
                     }
+                    .frame(minWidth: 460)
                 }
-                .frame(minWidth: 360)
                 Editor(i: e.selected).frame(minWidth: 280, maxWidth: 380)
             }
             Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn the knob. Shift on the E16 shows the values on its screen and turns the knobs finer. Knob 16 is HELP: turning it reads a page for every knob on the E16\'s screen, pushing it leaves.")
@@ -87,8 +97,10 @@ struct KnobCell: View {
             }
             .frame(width: 58, height: 58)
             Text(k.name).font(.system(.callout, design: .monospaced).bold()).lineLimit(1)
-            Text("CC\(k.cc)·\(k.push == .off ? "—" : k.push == .toggle ? "TGL" : "MOM")")
-                .font(.system(.caption2, design: .monospaced)).foregroundStyle(.secondary)
+            // what it does, in full (Marko: "I want to see what the knobs do right on this screen")
+            Text(e.turnText(i)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Text(e.pushText(i)).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            if !k.note.isEmpty { Text(k.note).font(.caption).italic().foregroundStyle(orange).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
         }
         .padding(6)
         .frame(maxWidth: .infinity)
@@ -102,6 +114,37 @@ struct KnobCell: View {
             let step = -(g.translation.height - dragLast[i, default: 0]) / 3
             if abs(step) >= 1 { e.turn(i, by: step.rounded()); dragLast[i] = g.translation.height }
         }.onEnded { _ in dragLast[i] = 0 })
+    }
+}
+
+/// v15: a row of the LIST view: the knob's ring and name, Marko's own note, what it does.
+struct KnobRow: View {
+    @EnvironmentObject var e: Engine
+    let i: Int
+    var body: some View {
+        let k = e.knobs[i]
+        let span = Double(max(1, k.high - k.low))
+        HStack(alignment: .center, spacing: 10) {
+            ZStack {
+                Circle().stroke(Color.gray.opacity(0.25), lineWidth: 4)
+                Circle().trim(from: 0, to: (e.values[i] - Double(k.low)) / span).stroke(k.colour, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
+                Text("\(i + 1)").font(.system(.caption, design: .monospaced).bold())
+            }
+            .frame(width: 34, height: 34)
+            Text(k.name).font(.system(.body, design: .monospaced).bold()).frame(width: 52, alignment: .leading)
+            TextField("my note", text: Binding(get: { e.knobs[i].note }, set: { e.knobs[i].note = $0; e.save() }))   // saved as typed
+                .textFieldStyle(.roundedBorder).frame(minWidth: 140, maxWidth: 220)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(e.turnText(i)).font(.callout).fixedSize(horizontal: false, vertical: true)
+                Text(e.pushText(i)).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 8).stroke(e.selected == i ? orange : Color.gray.opacity(0.3), lineWidth: e.selected == i ? 2 : 1))
+        .contentShape(Rectangle())
+        .onTapGesture { e.selected = i }
+        .onScrollWheel { dy in e.turn(i, by: dy) }
     }
 }
 
