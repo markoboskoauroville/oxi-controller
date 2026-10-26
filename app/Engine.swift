@@ -13,6 +13,9 @@ import SwiftUI
 struct KnobSetup: Codable, Equatable {
     enum Push: String, Codable, CaseIterable { case off = "OFF", toggle = "TOGGLE", momentary = "MOMENTARY" }
     enum Kind: String, Codable, CaseIterable { case note = "NOTE", cc = "CC" }
+    /// v2: what a turn and a push do in Live besides plain MIDI (Live.swift)
+    enum TurnRole: String, Codable, CaseIterable { case midi = "MIDI", tracks = "TRACKS", scrub = "SCRUB", parameter = "PARAMETER" }
+    enum PushRole: String, Codable, CaseIterable { case midi = "MIDI", automationView = "AUTOMATION VIEW", automationRecord = "AUTOMATION RECORD", playStop = "PLAY/STOP" }
     var name: String
     var r: Double, g: Double, b: Double         // 0...1
     var cc: Int                                 // what a turn sends
@@ -23,6 +26,23 @@ struct KnobSetup: Codable, Equatable {
     var pushKind: Kind = .note
     var pushNumber: Int
     var pushChannel: Int = 1
+    var turnRole: TurnRole = .midi
+    var pushRole: PushRole = .midi
+
+    enum CodingKeys: String, CodingKey { case name, r, g, b, cc, channel, low, high, speed, push, pushKind, pushNumber, pushChannel, turnRole, pushRole }
+    init(name: String, r: Double, g: Double, b: Double, cc: Int, channel: Int, pushNumber: Int) {
+        self.name = name; self.r = r; self.g = g; self.b = b; self.cc = cc; self.channel = channel; self.pushNumber = pushNumber
+    }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name); r = try c.decode(Double.self, forKey: .r); g = try c.decode(Double.self, forKey: .g); b = try c.decode(Double.self, forKey: .b)
+        cc = try c.decode(Int.self, forKey: .cc); channel = try c.decode(Int.self, forKey: .channel)
+        low = try c.decodeIfPresent(Int.self, forKey: .low) ?? 0; high = try c.decodeIfPresent(Int.self, forKey: .high) ?? 127
+        speed = try c.decodeIfPresent(Double.self, forKey: .speed) ?? 1
+        push = try c.decodeIfPresent(Push.self, forKey: .push) ?? .toggle; pushKind = try c.decodeIfPresent(Kind.self, forKey: .pushKind) ?? .note
+        pushNumber = try c.decode(Int.self, forKey: .pushNumber); pushChannel = try c.decodeIfPresent(Int.self, forKey: .pushChannel) ?? 1
+        turnRole = try c.decodeIfPresent(TurnRole.self, forKey: .turnRole) ?? .midi; pushRole = try c.decodeIfPresent(PushRole.self, forKey: .pushRole) ?? .midi
+    }
 
     var colour: Color { Color(red: r, green: g, blue: b) }
 
@@ -94,9 +114,68 @@ final class Engine: ObservableObject {
         status = "Given back to its scene"
     }
 
+    // MARK: HELP on the E16's screen (Marko, 26.10.2026: "describe what parameters are doing, what knobs are doing, and
+    // to scroll between pages ... If there is not enough text, you need to actually write big text. No shortcuts ...
+    // I'm scrolling with the 16 encoder"): knob 16 turns the pages, its push leaves; any other knob leaves too.
+
+    @Published var helpPage: Int? = nil
+
+    func helpPages() -> [(String, String)] {
+        var pages: [(String, String)] = [("HELP", "Turn knob sixteen to read the pages, one page for every knob. Push knob sixteen to leave the help. Touching any other knob also leaves it. This setup is called \(setupName).")]
+        for i in 0..<15 {
+            let k = knobs[i]
+            let kind = k.pushKind == .note ? "note" : "control change"
+            let turn: String
+            switch k.turnRole {
+            case .tracks: turn = "Turning selects the track above or below in Live's arrangement."
+            case .scrub: turn = "Turning moves the playhead along the timeline, a sixteenth note for every step. Hold Shift for finer steps."
+            case .parameter: turn = "Turning chooses which parameter of the selected track's device is automated; the screen names the device, the parameter and its value. Turning with Shift held changes that value in Live."
+            case .midi: turn = "Turning sends control change \(k.cc) on MIDI channel \(k.channel), from \(k.low) to \(k.high), into Live through the port DJ Mantra Remote. Map it to a parameter with MIDI Map."
+            }
+            let push: String
+            switch k.pushRole {
+            case .automationView: push = "Pushing shows or hides the automation lanes of the tracks in Live's arrangement."
+            case .automationRecord: push = "Pushing switches automation recording on or off. While it is on, turning a mapped knob writes key frames into the automation line."
+            case .playStop: push = "Pushing starts Live playing, or stops it."
+            case .midi:
+                switch k.push {
+                case .off: push = "Pushing does nothing."
+                case .toggle: push = "Pushing switches \(kind) \(k.pushNumber) on MIDI channel \(k.pushChannel) on, and the next push off again."
+                case .momentary: push = "Pushing sends \(kind) \(k.pushNumber) on MIDI channel \(k.pushChannel) while the knob is held down."
+                }
+            }
+            pages.append(("KNOB \(i + 1): \(k.name)", turn + " " + push))
+        }
+        return pages
+    }
+
+    /// The help as the screen shows it: every knob's text cut into pages that fit in readable letters.
+    func screenPages() -> [String] {
+        helpPages().flatMap { (title, text) in Signature.pages(for: title + ". " + text) }
+    }
+
+    func helpTurn(_ step: Int) {
+        let pages = screenPages()
+        helpPage = max(0, min(pages.count - 1, (helpPage ?? -1) + (step > 0 ? 1 : -1)))
+        drawHelp()
+    }
+
+    func leaveHelp() { guard helpPage != nil else { return }; helpPage = nil; drawLabels() }
+
+    private func drawHelp() {
+        guard connected, let e16, let p = helpPage else { return }
+        let pages = screenPages()
+        // the preset's name on top, the knob and its explanation under it (Marko, 26.10.2026)
+        e16.send(E16Message.framebuffer(Signature.page(title: setupName.uppercased(), body: pages[min(p, pages.count - 1)], number: "\(p + 1)/\(pages.count)")))
+    }
+
     private func heard(_ b: [UInt8]) {
         guard b.count >= 3, !presenting else { return }
         let kind = b[0] & 0xF0
+        // knob sixteen is the help's page knob
+        if kind == 0xB0, b[1] == 16 { let raw = Int(b[2]); helpTurn(raw < 64 ? raw : raw - 128); return }
+        if (kind == 0x90 || kind == 0x80), b[1] == 15 { if kind == 0x90 && b[2] > 0 { leaveHelp() }; return }
+        if helpPage != nil, kind == 0xB0 || (kind == 0x90 && b[2] > 0) { helpPage = nil }
         if kind == 0xB0, (1...16).contains(Int(b[1])) {                   // a turn
             let i = Int(b[1]) - 1
             let raw = Int(b[2])
@@ -109,8 +188,33 @@ final class Engine: ObservableObject {
         }
     }
 
+    @Published var liveSays = ""
+
     func turn(_ i: Int, by step: Double) {
         let k = knobs[i]
+        switch k.turnRole {
+        case .tracks:
+            lastTouched = i; selected = i
+            DispatchQueue.global().async { let r = Live.shared.selectTrack(by: Int(step)); DispatchQueue.main.async { self.showLive(r.map { "TRACK " + $0 } ?? "— Live does not answer") } }
+            return
+        case .scrub:
+            lastTouched = i; selected = i
+            let beats = step * 0.25 * k.speed * (shift ? 0.25 : 1)
+            DispatchQueue.global().async { let t = Live.shared.scrub(beats: beats); DispatchQueue.main.async { self.live(t.map { String(format: "BEAT %.2f", $0 + 1) } ?? "— Live does not answer") } }
+            return
+        case .parameter:
+            // v4 (Marko, 26.10.2026: "The second button exchanges the automation parameter ... If I'm changing the
+            // parameter of utility, it tells me utility is changing what"): a turn chooses the parameter of the
+            // selected track's device; with Shift it changes that parameter's value in Live
+            lastTouched = i; selected = i
+            let sh = shift
+            DispatchQueue.global().async {
+                let said = sh ? Live.shared.changeParameter(by: step * k.speed) : Live.shared.chooseParameter(by: Int(step))
+                DispatchQueue.main.async { self.showLive(said ?? "— Live does not answer") }
+            }
+            return
+        case .midi: break
+        }
         let v = max(Double(k.low), min(Double(k.high), values[i] + step * k.speed * (shift ? 0.25 : 1)))
         guard v != values[i] else { return }
         values[i] = v; lastTouched = i; selected = i
@@ -118,8 +222,33 @@ final class Engine: ObservableObject {
         ringsDue = true; drawLabels()
     }
 
+    private func live(_ said: String) { showLive(said) }
+
+    /// What Live says, big on the screen under the preset's name (and in the app's status line).
+    func showLive(_ said: String) {
+        liveSays = said; status = "Live: " + said
+        guard connected, !presenting, let e16 else { return }
+        helpPage = nil
+        e16.send(E16Message.framebuffer(Signature.page(title: setupName.uppercased(), body: said, number: "LIVE")))
+    }
+
     func press(_ i: Int, down: Bool) {
         let k = knobs[i]
+        if k.pushRole != .midi {
+            guard down else { return }
+            lastTouched = i; selected = i
+            DispatchQueue.global().async {
+                let said: String
+                switch k.pushRole {
+                case .automationView: said = Live.shared.automationView() ? "AUTOMATION VIEW (A)" : "— Live is not open"
+                case .automationRecord: said = Live.shared.automationRecord().map { $0 ? "AUTOMATION RECORD ON" : "RECORD OFF" } ?? "— Live does not answer"
+                case .playStop: said = Live.shared.playStop().map { $0 ? "PLAY" : "STOP" } ?? "— Live does not answer"
+                case .midi: said = ""
+                }
+                DispatchQueue.main.async { self.live(said) }
+            }
+            return
+        }
         switch k.push {
         case .off: return
         case .toggle: if down { pushed[i].toggle(); out(k, pushed[i]) } else { return }
@@ -168,7 +297,8 @@ final class Engine: ObservableObject {
     func drawLabels() {
         guard connected, !presenting, let e16 else { return }
         let title: String
-        if let i = lastTouched { title = "\(knobs[i].name) \(Int(values[i].rounded()))" + (knobs[i].push != .off && pushed[i] ? " ON" : "") }
+        if let i = lastTouched, knobs[i].turnRole != .midi || knobs[i].pushRole != .midi, !liveSays.isEmpty { title = liveSays }
+        else if let i = lastTouched { title = "\(knobs[i].name) \(Int(values[i].rounded()))" + (knobs[i].push != .off && pushed[i] ? " ON" : "") }
         else { title = setupName }
         let labels = (0..<16).map { shift ? String(Int(values[$0].rounded())) : knobs[$0].name }
         e16.send(E16Message.labels(title: title, labels: labels))
@@ -224,4 +354,15 @@ final class Engine: ObservableObject {
     }
 
     func edited() { ringsDue = true; drawLabels() }
+
+    /// The first profile, AUTOMATION (Marko, 26.10.2026): knob 1 tracks / automation view, knob 2 a parameter's CC
+    /// / automation record, knob 3 scrub / play-stop; the others plain MIDI.
+    func liveAutomationProfile() {
+        var k = (0..<16).map(KnobSetup.defaults)
+        k[0].name = "TRK"; k[0].turnRole = .tracks; k[0].pushRole = .automationView; (k[0].r, k[0].g, k[0].b) = (1, 0.58, 0)
+        k[1].name = "AUTO"; k[1].turnRole = .parameter; k[1].pushRole = .automationRecord; (k[1].r, k[1].g, k[1].b) = (0.2, 0.82, 0.48)
+        k[2].name = "TIME"; k[2].turnRole = .scrub; k[2].pushRole = .playStop; (k[2].r, k[2].g, k[2].b) = (0.24, 0.6, 1)
+        knobs = k; values[1] = 64; setupName = "AUTOMATION"; lastTouched = nil   // its name (Marko, 26.10.2026)
+        save(); drawAll()
+    }
 }

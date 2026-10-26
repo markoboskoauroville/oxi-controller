@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 1
+let VERSION = 4
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -18,7 +18,16 @@ struct DJMantraAbletonRemote: App {
 
 final class Delegate: NSObject, NSApplicationDelegate {
     static let engine = Engine()
-    func applicationDidFinishLaunching(_ n: Notification) { Delegate.engine.connect() }
+    func applicationDidFinishLaunching(_ n: Notification) {
+        let e = Delegate.engine
+        e.connect()
+        // tests from the Mac: --profile automation loads the first profile, --help-page N shows that help page
+        let a = CommandLine.arguments
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            if a.contains("--profile"), a.contains("automation") { e.liveAutomationProfile() }
+            if let i = a.firstIndex(of: "--help-page"), i + 1 < a.count, let n = Int(a[i + 1]) { e.helpPage = n - 2; e.helpTurn(1) }
+        }
+    }
     // the E16 back to its scene when the app goes (otherwise it stays blank)
     func applicationWillTerminate(_ n: Notification) { Delegate.engine.giveBack() }
     func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
@@ -36,7 +45,11 @@ struct Main: View {
                 Spacer()
                 TextField("setup", text: $e.setupName).frame(maxWidth: 180)
                 Button("SAVE") { e.save() }
-                Menu("RECALL") { ForEach(e.saved(), id: \.self) { n in Button(n) { e.recall(n) } } }.frame(maxWidth: 110)
+                Menu("RECALL") {
+                    Button("AUTOMATION (the first profile)") { e.liveAutomationProfile() }
+                    Divider()
+                    ForEach(e.saved(), id: \.self) { n in Button(n) { e.recall(n) } }
+                }.frame(maxWidth: 110)
             }
             Text(e.status).font(.system(.callout, design: .monospaced))
                 .foregroundStyle(e.connected ? .green : .secondary).fixedSize(horizontal: false, vertical: true)
@@ -49,7 +62,7 @@ struct Main: View {
                 .frame(minWidth: 360)
                 Editor(i: e.selected).frame(minWidth: 280, maxWidth: 380)
             }
-            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn the knob. Shift on the E16 shows the values on its screen and turns the knobs finer.")
+            Text("Ableton Live: Settings → Link, Tempo & MIDI → MIDI Ports → Input \"DJ Mantra Remote\": Track and Remote on; then MIDI Map (⌘M) a control and turn the knob. Shift on the E16 shows the values on its screen and turns the knobs finer. Knob 16 is HELP: turning it reads a page for every knob on the E16\'s screen, pushing it leaves.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
@@ -59,6 +72,7 @@ struct Main: View {
 struct KnobCell: View {
     @EnvironmentObject var e: Engine
     let i: Int
+    @State private var dragLast: [Int: Double] = [:]
     var body: some View {
         let k = e.knobs[i]
         let span = Double(max(1, k.high - k.low))
@@ -80,8 +94,13 @@ struct KnobCell: View {
         .background(RoundedRectangle(cornerRadius: 8).stroke(e.selected == i ? orange : Color.gray.opacity(0.3), lineWidth: e.selected == i ? 2 : 1))
         .contentShape(Rectangle())
         .onTapGesture { e.selected = i }
-        // the mouse wheel on a knob turns it, as on the device
+        // the mouse wheel on a knob turns it, as on the device; v4 (Marko, 26.10.2026: "two-way communication ... I can
+        // also turn the knobs in this app"): so does a drag up or down; either way the E16's ring follows
         .onScrollWheel { dy in e.turn(i, by: dy) }
+        .gesture(DragGesture(minimumDistance: 2).onChanged { g in
+            let step = -(g.translation.height - dragLast[i, default: 0]) / 3
+            if abs(step) >= 1 { e.turn(i, by: step.rounded()); dragLast[i] = g.translation.height }
+        }.onEnded { _ in dragLast[i] = 0 })
     }
 }
 
@@ -99,6 +118,7 @@ struct Editor: View {
                 }), supportsOpacity: false)
             }
             Section("TURN") {
+                Picker("In Live", selection: b.turnRole) { ForEach(KnobSetup.TurnRole.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Stepper("CC \(b.wrappedValue.cc)", value: b.cc, in: 0...127)
                 Stepper("Channel \(b.wrappedValue.channel)", value: b.channel, in: 1...16)
                 Stepper("From \(b.wrappedValue.low)", value: b.low, in: 0...126)
@@ -106,6 +126,7 @@ struct Editor: View {
                 Picker("Speed", selection: b.speed) { Text("½").tag(0.5); Text("1").tag(1.0); Text("2").tag(2.0); Text("4").tag(4.0) }
             }
             Section("PUSH") {
+                Picker("In Live", selection: b.pushRole) { ForEach(KnobSetup.PushRole.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Picker("Does", selection: b.push) { ForEach(KnobSetup.Push.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Picker("Sends", selection: b.pushKind) { ForEach(KnobSetup.Kind.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
                 Stepper("\(b.wrappedValue.pushKind.rawValue) \(b.wrappedValue.pushNumber)", value: b.pushNumber, in: 0...127)

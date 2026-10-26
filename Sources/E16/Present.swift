@@ -210,6 +210,75 @@ enum Signature {
     }
 }
 
+extension Signature {
+    /// The smallest letters the 128×64 screen still shows readably (seen 26.10.2026: 7 px was not).
+    static let MIN_SIZE: CGFloat = 9.5
+
+    static func bodyAttrs(_ size: CGFloat) -> [NSAttributedString.Key: Any] {
+        let style = NSMutableParagraphStyle(); style.lineBreakMode = .byWordWrapping; style.lineSpacing = 0
+        return [.font: NSFont.systemFont(ofSize: size, weight: size > 9 ? .semibold : .regular), .foregroundColor: NSColor.white, .paragraphStyle: style]
+    }
+
+    static func fits(_ text: String, _ size: CGFloat) -> Bool {
+        let need = (text as NSString).boundingRect(with: NSSize(width: 128, height: 1000), options: [.usesLineFragmentOrigin], attributes: bodyAttrs(size))
+        return need.height <= 51
+    }
+
+    /// A text cut into pages at sentence (or word) ends, each fitting at MIN_SIZE or larger.
+    static func pages(for text: String) -> [String] {
+        var out: [String] = []; var cur = ""
+        let pieces = text.replacingOccurrences(of: ". ", with: ".\u{1}").split(separator: "\u{1}").map(String.init)
+        for piece in pieces {
+            let next = cur.isEmpty ? piece : cur + " " + piece
+            if fits(next, MIN_SIZE) { cur = next; continue }
+            if !cur.isEmpty { out.append(cur); cur = "" }
+            // a sentence too long alone: by words
+            var line = ""
+            for word in piece.split(separator: " ") {
+                let n = line.isEmpty ? String(word) : line + " " + word
+                if fits(n, MIN_SIZE) { line = n } else { out.append(line); line = String(word) }
+            }
+            cur = line
+        }
+        if !cur.isEmpty { out.append(cur) }
+        return out
+    }
+
+    /// A help page: the title on top, the text wrapped beneath it in the largest letters that fit, the page's number
+    /// at the top right.
+    static func page(title: String, body: String, number: String) -> [UInt8] {
+        let w = 128, h = 64
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return [] }
+        ctx.setFillColor(gray: 0, alpha: 1); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+        let white = NSColor.white
+        (title as NSString).draw(at: NSPoint(x: 0, y: h - 10), withAttributes: [.font: NSFont.systemFont(ofSize: 8, weight: .heavy), .foregroundColor: white])
+        let numAttrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 7, weight: .regular), .foregroundColor: white]
+        let nw = (number as NSString).size(withAttributes: numAttrs).width
+        (number as NSString).draw(at: NSPoint(x: CGFloat(w) - nw, y: CGFloat(h) - 9), withAttributes: numAttrs)
+        ctx.setFillColor(gray: 1, alpha: 1); ctx.fill(CGRect(x: 0, y: h - 12, width: w, height: 1))
+        // the largest size at which the whole text fits under the title, never under MIN_SIZE (a longer text is cut
+        // into pages beforehand: pages(for:))
+        let box = NSRect(x: 0, y: 0, width: CGFloat(w), height: CGFloat(h - 13))
+        var size: CGFloat = 16
+        var attrs = bodyAttrs(size)
+        while size > MIN_SIZE, !fits(body, size) { size -= 0.5; attrs = bodyAttrs(size) }
+        (body as NSString).draw(with: box, options: [.usesLineFragmentOrigin], attributes: attrs)
+        NSGraphicsContext.restoreGraphicsState()
+        guard let data = ctx.data else { return [] }
+        let px = data.assumingMemoryBound(to: UInt8.self)
+        var out = [UInt8](repeating: 0, count: 1024)
+        for page in 0..<8 { for x in 0..<w {
+            var byte: UInt8 = 0
+            for bit in 0..<8 where px[(page * 8 + bit) * w + x] > 110 { byte |= 1 << UInt8(bit) }
+            out[page * w + x] = byte
+        } }
+        return out
+    }
+}
+
 extension E16Port {
     /// Remote Mode in, with the signature on the screen for [seconds] before anything else.
     @discardableResult
