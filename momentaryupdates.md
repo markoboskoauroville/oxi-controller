@@ -108,3 +108,7 @@
 > "it is jumping between parameters, but I have also a visual indication on the screen which stays locked. If you take a screenshot, you will see there is a square around frequency. I am expecting that when I turn the number 4, this square is jumping. Where am I" (Marko, 26.10.2026)
 
 21. Where am I in Live: Live's square marks the clicked parameter and no script can move it (selected_parameter is read-only); so every step of knob 4 and turn of knob 2 is written in Live's status bar: ► DEVICE · parameter · value · n/N. — **Status:** done (AbletonOSC view.py, self.manager.show_message on every step and nudge); seen in Live: "▶ EQ Eight · 3 Filter Type A · Low Pass 12dB · 26/84 (OXI E16 knob 4; knob 2 turns it)".
+
+> "this status line is always disappearing. Please keep it always on screen" (Marko, 26.10.2026)
+
+22. The knob 4/2 line kept in Live's status bar: written again every 1.5 s. — **Status:** done (schedule_message 15 ticks in AbletonOSC view.py); seen still there 12 s after a step. Its cost: Live's own hints in that line (a hovered parameter's name) are covered between rewrites.

@@ -40,6 +40,24 @@ class ViewHandler(AbletonOSCHandler):
         # the parameter knob 4 has stepped to (None: Live's own selected parameter); a new click in Live resets it
         self._dj_param = None
         self._dj_seen = None
+        # the status line (Marko, 26.10.2026: "this status line is always disappearing. Please keep it always on
+        # screen"): Live fades its messages, so the last one is written again every 15 ticks (about 1.5 s)
+        self._dj_line = ""
+        self._dj_keeping = False
+
+        def keep_line():
+            if self._dj_line:
+                self.manager.show_message(self._dj_line)
+                self.manager.schedule_message(15, keep_line)
+            else:
+                self._dj_keeping = False
+
+        def say(line):
+            self._dj_line = line
+            self.manager.show_message(line)
+            if not self._dj_keeping:
+                self._dj_keeping = True
+                self.manager.schedule_message(15, keep_line)
 
         def key(p):
             # Live hands out a new Python wrapper at every access: the object behind it is told by its _live_ptr
@@ -83,7 +101,7 @@ class ViewHandler(AbletonOSCHandler):
             p, info = selected_parameter_info()
             where = "%d/%d" % (keys.index(key(p)) + 1 if key(p) in keys else 0, len(plist))
             # Live's square stays on the clicked parameter (no script can move it): Live's status bar says where knob 4 is
-            self.manager.show_message("\u25b6 %s \u00b7 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 4; knob 2 turns it)" % (info[0], info[1], info[2], where))
+            say("\u25b6 %s \u00b7 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 4; knob 2 turns it)" % (info[0], info[1], info[2], where))
             return info + (where,)
 
         self.osc_server.add_handler("/live/view/step_parameter", step_parameter)
@@ -99,7 +117,7 @@ class ViewHandler(AbletonOSCHandler):
                 v = p.value + (p.max - p.min) / 127.0 * step
             p.value = max(p.min, min(p.max, v))
             info = selected_parameter_info()[1]
-            self.manager.show_message("\u25b6 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 2)" % info)
+            say("\u25b6 %s \u00b7 %s \u00b7 %s   (OXI E16 knob 2)" % info)
             return info
 
         # DJ Mantra Ableton Remote (26.10.2026, Marko: "make a special case for pitch sliders"): the pitch of the clip in
