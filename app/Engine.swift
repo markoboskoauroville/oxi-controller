@@ -262,6 +262,7 @@ final class Engine: ObservableObject {
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
         var a = sockaddr_in(); a.sin_family = sa_family_t(AF_INET); a.sin_port = in_port_t(11010).bigEndian; a.sin_addr.s_addr = inet_addr("127.0.0.1")
         guard withUnsafePointer(to: &a, { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }) == 0 else { return }
+        Ports.record("oxi-testdoor", 11010, udp: true)     // its one owner in the Mac's port registry (MANTRA_PORTS v2, 27.10.2026)
         var buf = [UInt8](repeating: 0, count: 256)
         while true {
             let n = recv(fd, &buf, buf.count, 0); guard n > 0 else { continue }
