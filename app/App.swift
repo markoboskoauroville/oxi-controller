@@ -9,7 +9,10 @@ let VERSION = 28
 struct DJMantraAbletonRemote: App {
     @NSApplicationDelegateAdaptor(Delegate.self) var delegate
     var body: some Scene {
-        WindowGroup("DJ Mantra Ableton Remote for OXI E16 · v\(VERSION)") {
+        // v28: the Resolve copy says so in its title (Marko: "I don't know where I can control this ... for DaVinci Resolve")
+        WindowGroup((Bundle.main.bundleIdentifier ?? "").lowercased().contains("resolve")
+                    ? "E16 for DaVinci Resolve · v\(VERSION) · LEDs brightness at the top"
+                    : "DJ Mantra Ableton Remote for OXI E16 · v\(VERSION)") {
             Main().environmentObject(Delegate.engine)
                 .frame(minWidth: 900, minHeight: 620)
         }
