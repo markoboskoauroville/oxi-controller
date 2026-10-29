@@ -252,8 +252,12 @@ restarted, it was not running.
 
 > Another feature to build is vu meter, so those first row of buttons is showing the level of the channel. Is that possible to do?
 
+> Also developing in pages. When I click on the shift, you will offer me to turn the pages with buttons and knobs, and then we can continue with channels. For any number of channels available in DaVinci Resolve, we can just swap the controls 4 by 4 channels.
+
 Found 29.10.2026: Resolve 21.1 accepts no Mackie Control (its audio consoles are only Blackmagic's Fairlight ones) and
 its scripting has no track solo/mute/fader/pan; Marko chose "through Resolve's scripting": names from GetTrackName,
-MUTE = the track switched off, SOLO = the others switched off, VOLUME and PAN = the clips' AudioVolume / AudioPan.
+VOLUME and PAN = the clips' AudioVolume (dB) / AudioPan (−100…100), both measured to work. Measured: SetTrackEnable
+and SetClipEnabled answer False for audio (they do nothing), so MUTE = the clips' volume to the bottom and back to what
+it was; SOLO = the other tracks muted that way. No level meter exists in Resolve's scripting.
 
 **Status:** in progress 29.10.2026.
