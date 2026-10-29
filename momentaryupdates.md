@@ -237,3 +237,17 @@
 
 **Status:** v26: the test door (UDP 11010) writes the app into ~/.config/mantra-ports.json as its owner. Rebuilt; not
 restarted, it was not running.
+
+## 29.10.2026 — E16 FOR DAVINCI RESOLVE: Fairlight solo, mute, volume, pan over Mackie Control
+
+> We develop a lot of Oxi e16 code. You just need to repurpose the code for DaVinci Resolve in the DaVinci Resolve section in the Star menu. We need a new menu. We call it e16 for DaVinci Resolve, and you exclusively need to use Mekhi protocol. Then you need to program it so it controls the 4-channel audio solo, then mute. First is solo.
+>
+> If you look at Oxi e16, the first the first vertical row or the first column will control the first 4 channels solo, and the second vertical column will create the first 4 channels mute. The next vertical column, number 3, is controlling the first 4 channels volume, and the last one is controlling the first 4 channels panning. Please make this happen. Also, if you can read the track names, you can put them right there when I'm turning the buttons, or you can put them in the matrix display to see which channel. What is the channel name of each audio channel? This first page is controlling 4 channels, as we said. Matrix display must be clear:
+> - What is solo?
+> - What is mute?
+> - What is volume?
+> - What is panning?
+
+(Dictation: "Mekhi protocol" = Mackie Control.)
+
+**Status:** in progress 29.10.2026.
