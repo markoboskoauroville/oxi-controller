@@ -250,4 +250,10 @@ restarted, it was not running.
 
 (Dictation: "Mekhi protocol" = Mackie Control.)
 
+> Another feature to build is vu meter, so those first row of buttons is showing the level of the channel. Is that possible to do?
+
+Found 29.10.2026: Resolve 21.1 accepts no Mackie Control (its audio consoles are only Blackmagic's Fairlight ones) and
+its scripting has no track solo/mute/fader/pan; Marko chose "through Resolve's scripting": names from GetTrackName,
+MUTE = the track switched off, SOLO = the others switched off, VOLUME and PAN = the clips' AudioVolume / AudioPan.
+
 **Status:** in progress 29.10.2026.
