@@ -26,3 +26,14 @@ Terminal with `--import` and `--ask` on Haiku, Sonnet and Opus. The window itsel
 - **v24:** PROFILES… → PLACE puts a profile on a page. Page names are kept in layout.json, loaded at start.
 - **Test door** (UDP 11010): `turn N STEP`, `push N`, `release N`, `shift 0|1`, `present`, `role N ROLE`, `nav`, `place NAME PAGE`.
 - **Open for Marko's hand:** the picker and PLACE on the E16, a real MIDI Map in Live with the new numbers, and the ring colours.
+
+## v27 (29.10.2026): E16 FOR DAVINCI RESOLVE
+
+app/Resolve.swift: ResolveMixer (Python through the DaVinci Resolve Actions router, POST 127.0.0.1:8940/run, its
+`result`) and the Engine extension (resolveTurn, resolvePress, resolveCells, resolveRings, resolveRefresh). Engine hooks
+when `resolveMode`: heard() (turns/pushes; Shift and the page turner kept), drawLabels, flushRings, goTo (refresh).
+App.swift: --resolve or a bundle identifier with "resolve" turns it on, refresh every 2 s. build.sh copies the app as
+"E16 for DaVinci Resolve (Mantra).app". Resolve facts (measured on his timeline): SetTrackEnable / SetClipEnabled answer
+False for audio, so MUTE/SOLO turn the clips down to −100 dB and give back their own levels (kept in the mixer);
+AudioVolume is dB, AudioPan −100…100. No Mackie Control in Resolve 21.1; no level meters in its scripting.
+Test door: knob numbers are 1-based for turn and push (push 9 = knob 9 = SOLO of the third track).

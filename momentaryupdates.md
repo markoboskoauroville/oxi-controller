@@ -260,4 +260,10 @@ VOLUME and PAN = the clips' AudioVolume (dB) / AudioPan (−100…100), both mea
 and SetClipEnabled answer False for audio (they do nothing), so MUTE = the clips' volume to the bottom and back to what
 it was; SOLO = the other tracks muted that way. No level meter exists in Resolve's scripting.
 
-**Status:** in progress 29.10.2026.
+**Status:** v27 29.10.2026: E16 FOR DAVINCI RESOLVE (Mantra), its own app (the same program, identifier
+community.auroville.e16resolve), a row in the Star's DaVinci Resolve group. Columns: 1 SOLO, 2 MUTE, 3 VOLUME, 4 PAN;
+rows: the four tracks of the page (page 1 = A1–A4); Shift twice: the page turner (A5–A8 …). Screen: "solo"/"SOLO*",
+"mute"/"MUTE*", "V-2.0", "P R20" over the track's name; rings yellow, red, green, blue. Tested through the test door on
+his timeline SANTOSH / MEGAMIX (Audio 3, 8 clips): volume −2.0 dB on every clip, pan R20, MUTE to −100 dB and back to
+exactly −2.0, SOLO turned the others down; then all back to 0 dB, centre, solo off. Not seen yet: the E16's own
+screen and rings (Marko's eyes). VU meter: not possible, Resolve's scripting has no level of any track.

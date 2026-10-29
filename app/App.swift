@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 26
+let VERSION = 27
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -23,6 +23,12 @@ final class Delegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ n: Notification) {
         let e = Delegate.engine
         let args = CommandLine.arguments
+        // v27: E16 FOR DAVINCI RESOLVE: the same app as its own bundle (or --resolve): the Resolve mixer, page 1 = A1–A4
+        if args.contains("--resolve") || (Bundle.main.bundleIdentifier ?? "").lowercased().contains("resolve") {
+            e.resolveMode = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { e.resolveRefresh() }
+            Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in if e.resolveMode, !e.navMode { e.resolveRefresh() } }
+        }
         // --import FILE...: the same parser as Settings' file picker; --ask: a chat test, no window, the E16 left alone
         if let m = args.firstIndex(of: "--import") {
             print(Keys.importFiles(args[(m + 1)...].prefix { !$0.hasPrefix("--") }.map { URL(fileURLWithPath: $0) })); fflush(stdout)

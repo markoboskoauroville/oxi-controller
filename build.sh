@@ -35,3 +35,15 @@ PL
 codesign --force -s "Mantra Apps" "$APP"
 rm -rf "/Applications/DJ Mantra Ableton Remote.app" "/Applications/$NAME.app"; cp -R "$APP" /Applications/
 echo "built $APP (v$V) and installed it in /Applications"
+
+# v27 (Marko, 29.10.2026): E16 FOR DAVINCI RESOLVE, the same program as its own app (its identifier says "resolve", so
+# it starts as the Resolve mixer: SOLO, MUTE, VOLUME, PAN of four audio tracks a page). Only one of the two may hold
+# the E16 at a time.
+R="build/E16 for DaVinci Resolve (Mantra).app"
+rm -rf "$R"; cp -R "$APP" "$R"
+plutil -replace CFBundleIdentifier -string community.auroville.e16resolve "$R/Contents/Info.plist"
+plutil -replace CFBundleName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
+plutil -replace CFBundleDisplayName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
+codesign --force -s "Mantra Apps" "$R"
+rm -rf "/Applications/E16 for DaVinci Resolve (Mantra).app"; cp -R "$R" /Applications/
+echo "built $R (v$V) and installed it in /Applications"

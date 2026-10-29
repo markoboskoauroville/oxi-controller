@@ -135,6 +135,7 @@ final class Engine: ObservableObject {
         while pageNames.count < pages.count { pageNames.append("") }
         while pagePushed.count < pages.count { pagePushed.append(Array(repeating: false, count: 16)) }
         page = p; lastTouched = nil; liveSays = ""
+        if resolveMode { resolveRefresh() }
         status = navMode ? "PAGE \(p + 1) of \(KnobSetup.pageCount)" + (pageName(p).isEmpty ? "" : " · " + pageName(p)) : pageLine()
         drawAll()
     }
@@ -232,10 +233,12 @@ final class Engine: ObservableObject {
     @Published var lastTouched: Int? = nil
     @Published var shift = false
 
-    private var e16: E16Port?
+    var e16: E16Port?
     private var client = MIDIClientRef()
     private var source = MIDIEndpointRef()
-    private var ringsDue = false
+    var ringsDue = false
+    /// v27: E16 FOR DAVINCI RESOLVE (Resolve.swift): the knobs drive the first four audio tracks per page
+    @Published var resolveMode = false
     private var presentStop = false
 
     static let dir = FileManager.default.homeDirectoryForCurrentUser
@@ -433,6 +436,16 @@ final class Engine: ObservableObject {
             if kind == 0x90, b[2] > 0, b[1] < 16 { navPress(Int(b[1])); return }
             if !(b[1] == 16 && (kind == 0x90 || kind == 0x80)) { return }
         }
+        if resolveMode {                                                   // v27: the Resolve mixer
+            if kind == 0xB0, (1...16).contains(Int(b[1])) { let raw = Int(b[2]); resolveTurn(Int(b[1]) - 1, by: Double(raw < 64 ? raw : raw - 128)); return }
+            if kind == 0x90, b[2] > 0, Int(b[1]) < 16 { resolvePress(Int(b[1])); return }
+            if kind == 0x90 || kind == 0x80, Int(b[1]) == 16 {
+                let down = kind == 0x90 && b[2] > 0; shift = down
+                if down { if Date().timeIntervalSince(lastShiftTap) < 0.5 { lastShiftTap = .distantPast; setNav(!navMode); return }; lastShiftTap = Date() }
+                drawLabels()
+            }
+            return
+        }
         if kind == 0xB0, (1...16).contains(Int(b[1])) {                   // a turn
             let i = Int(b[1]) - 1
             let raw = Int(b[2])
@@ -596,6 +609,7 @@ final class Engine: ObservableObject {
             }))
             return
         }
+        if resolveMode { e16.send(E16Message.rings(resolveRings())); return }
         let rings = (0..<16).map { i -> Ring in
             let k = knobs[i]
             let lit = (k.push == .off || pushed[i] ? 1.0 : 0.35) * k.intensity  // a toggled-off knob glows dimmer
@@ -612,6 +626,7 @@ final class Engine: ObservableObject {
         guard connected, !presenting, let e16 else { return }
         if navMode { e16.send(E16Message.framebuffer(Screen.grid(navCells(), touched: page - bankStart))); return }
         guard Date() >= messageUntil else { return }
+        if resolveMode { e16.send(E16Message.framebuffer(Screen.grid(resolveCells(), touched: lastTouched))); return }
         // v22 (Marko, 26.10.2026: "removing the title ... all the space for my custom labels"): two lines a knob; with
         // Shift held the first line is the knob's value
         let cells = (0..<16).map { i -> (String, String) in
@@ -631,7 +646,7 @@ final class Engine: ObservableObject {
 
     @Published var navMode = false
     private var lastShiftTap = Date.distantPast
-    private var messageUntil = Date.distantPast
+    var messageUntil = Date.distantPast
     /// The last page in use: the highest page opened or set up.
     var lastPage: Int { pages.count - 1 }
     /// The first of the fifteen pages the knobs show now.
