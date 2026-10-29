@@ -3,7 +3,7 @@
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
 
-let VERSION = 27
+let VERSION = 28
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -72,6 +72,10 @@ struct Main: View {
                 Button(e.connected ? "GIVE BACK" : "CONNECT") { e.connected ? e.giveBack() : e.connect() }
                 Button(e.presenting ? "STOP THE SHOW" : "PRESENT THE OXI") { e.togglePresent() }.disabled(!e.connected)
                 Button(e.statusLineOn ? "LIVE STATUS LINE: ON" : "LIVE STATUS LINE: OFF") { e.toggleStatusLine() }
+                // v28: the brightness of every LED ring on the E16
+                Text("LEDs").font(.caption.bold())
+                Slider(value: $e.ledBrightness, in: 0.05...1).frame(width: 140)
+                Text("\(Int((e.ledBrightness * 100).rounded())) %").font(.caption.monospaced()).frame(width: 40)
                 Spacer()
                 // v24: a profile is saved from the page(s) it sits on, and placed on pages in PROFILES
                 TextField("profile", text: $e.setupName).frame(maxWidth: 180)

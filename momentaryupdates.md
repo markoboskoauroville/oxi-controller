@@ -267,3 +267,9 @@ rows: the four tracks of the page (page 1 = A1–A4); Shift twice: the page turn
 his timeline SANTOSH / MEGAMIX (Audio 3, 8 clips): volume −2.0 dB on every clip, pan R20, MUTE to −100 dB and back to
 exactly −2.0, SOLO turned the others down; then all back to 0 dB, centre, solo off. Not seen yet: the E16's own
 screen and rings (Marko's eyes). VU meter: not possible, Resolve's scripting has no level of any track.
+
+## 29.10.2026, 13:02 (Marko, word for word)
+
+"Please come back to the E16 controlling my DaVinci Resolve in the app. I want to have the brightness of the LEDs set."
+
+**Status:** v28: LEDs slider (5–100 %) in the window top bar, kept between runs, applied to every ring sent (Resolve mixer, Ableton knobs, page turner). Both apps rebuilt.

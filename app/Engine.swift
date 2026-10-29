@@ -239,6 +239,14 @@ final class Engine: ObservableObject {
     var ringsDue = false
     /// v27: E16 FOR DAVINCI RESOLVE (Resolve.swift): the knobs drive the first four audio tracks per page
     @Published var resolveMode = false
+    /// v28 (Marko, 29.10.2026: "I want to have the brightness of the LEDs set"): every ring of the E16, 5 ... 100 %, kept.
+    @Published var ledBrightness: Double = UserDefaults.standard.object(forKey: "ledBrightness") as? Double ?? 1 {
+        didSet { UserDefaults.standard.set(ledBrightness, forKey: "ledBrightness"); ringsDue = true; flushRings() }
+    }
+    private func dimmed(_ rings: [Ring]) -> [Ring] {
+        let k = max(0.05, min(1, ledBrightness))
+        return rings.map { Ring(r: Int((Double($0.r) * k).rounded()), g: Int((Double($0.g) * k).rounded()), b: Int((Double($0.b) * k).rounded()), amount: $0.amount) }
+    }
     private var presentStop = false
 
     static let dir = FileManager.default.homeDirectoryForCurrentUser
@@ -598,7 +606,7 @@ final class Engine: ObservableObject {
         guard ringsDue, connected, !presenting, let e16 else { return }
         ringsDue = false
         if navMode {   // v23: the page you are on white, pages in use orange, the rest dark
-            e16.send(E16Message.rings((0..<16).map { i in
+            e16.send(E16Message.rings(dimmed((0..<16).map { i in
                 // v25: knob 16 is the page turner, red so it stands out (Marko, 26.10.2026: "Page turners should be
                 // colored red, not yellow, as all the others are there, so it's kind of emphasized")
                 if i == 15 { return Ring(r: 127, g: 0, b: 0, amount: 1) }
@@ -606,10 +614,10 @@ final class Engine: ObservableObject {
                 if p == page { return Ring(r: 120, g: 120, b: 120, amount: 1) }
                 if p <= lastPage { return Ring(r: 127, g: 60, b: 0, amount: 0.35) }
                 return Ring(r: 0, g: 0, b: 0, amount: 0)
-            }))
+            })))
             return
         }
-        if resolveMode { e16.send(E16Message.rings(resolveRings())); return }
+        if resolveMode { e16.send(E16Message.rings(dimmed(resolveRings()))); return }
         let rings = (0..<16).map { i -> Ring in
             let k = knobs[i]
             let lit = (k.push == .off || pushed[i] ? 1.0 : 0.35) * k.intensity  // a toggled-off knob glows dimmer
@@ -617,7 +625,7 @@ final class Engine: ObservableObject {
             return Ring(r: Int(k.r * 127 * lit), g: Int(k.g * 127 * lit), b: Int(k.b * 127 * lit),
                         amount: (values[i] - Double(k.low)) / span)
         }
-        e16.send(E16Message.rings(rings))
+        e16.send(E16Message.rings(dimmed(rings)))
     }
 
     /// The screen: the title tells the last knob touched and its value (or the setup's name), the sixteen labels
