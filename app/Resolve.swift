@@ -73,9 +73,14 @@ final class ResolveMixer {
 
     // MARK: volume and pan, every clip of the track
 
+    /// 29.10.2026 (Marko: "I am turning the knob 3 for the volume of track 1, and nothing is happening"): Audio 1 had no
+    /// clips, and volume and pan live on the clips; the screen now says so instead of staying silent.
+    private func empty(_ i: Int) -> Bool { (tracks[i]?.clips ?? 0) == 0 }
+
     func nudge(_ i: Int, volume d: Double) -> String {
         q.sync {
             guard tracks[i] != nil else { return "A\(i): no such track" }
+            if empty(i) { return line(i, "NO CLIPS: NOTHING TO TURN") }
             if var kept = silenced[i] {                                    // muted: the level it comes back to
                 kept = kept.map { min(12, max(-60, $0 + d)) }; silenced[i] = kept
                 tracks[i]?.vol = kept.first ?? 0
@@ -96,6 +101,7 @@ final class ResolveMixer {
 
     func nudge(_ i: Int, pan d: Double) -> String {
         q.sync {
+            if empty(i) { return line(i, "NO CLIPS: NOTHING TO PAN") }
             if let r = run(setAll(i, "AudioPan", "min(100.0, max(-100.0, v + \(d)))")), let v = r["v"] as? Double { tracks[i]?.pan = v }
             return line(i, "PAN " + panWord(tracks[i]?.pan ?? 0))
         }
@@ -227,8 +233,8 @@ extension Engine {
             switch resolveFunction(i) {
             case 0: return (m.solo.contains(t) ? "SOLO*" : "solo", name)
             case 1: return (m.muted.contains(t) ? "MUTE*" : "mute", name)
-            case 2: return ("V" + (tr.map { m.db($0.vol) } ?? "?"), name)
-            default: return ("P " + (tr.map { m.panWord($0.pan) } ?? "?"), name)
+            case 2: return ((tr?.clips ?? 0) == 0 ? "V --" : "V" + (tr.map { m.db($0.vol) } ?? "?"), name)
+            default: return ((tr?.clips ?? 0) == 0 ? "P --" : "P " + (tr.map { m.panWord($0.pan) } ?? "?"), name)
             }
         }
     }
