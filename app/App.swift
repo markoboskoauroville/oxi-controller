@@ -69,7 +69,12 @@ struct Main: View {
     @EnvironmentObject var e: Engine
     @State private var view = UserDefaults.standard.string(forKey: "view") ?? "knobs"
     @State private var showProfiles = false
+    /// v28 (Marko, 29.10.2026: "You open E16 for DaVinci Resolve, and inside are the settings from Ableton Live"):
+    /// the Resolve copy shows only the Resolve mixer.
     var body: some View {
+        if e.resolveMode { ResolveWindow() } else { ableton }
+    }
+    var ableton: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Button(e.connected ? "GIVE BACK" : "CONNECT") { e.connected ? e.giveBack() : e.connect() }
@@ -483,5 +488,88 @@ struct RingPalette: View {
                     .onTapGesture { knob.r = r; knob.g = g; knob.b = b }
             }
         }
+    }
+}
+
+
+/// v28: E16 FOR DAVINCI RESOLVE's own window: the E16 as it is laid out, four rows = the page's four audio tracks,
+/// four columns = SOLO, MUTE, VOLUME, PAN; every cell works with the mouse as the knob does; the LEDs' brightness.
+struct ResolveWindow: View {
+    @EnvironmentObject var e: Engine
+    private let names = ["SOLO", "MUTE", "VOLUME", "PAN"]
+    private let tint: [Color] = [.yellow, .red, .green, Color(red: 0.3, green: 0.55, blue: 1)]
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+            let m = ResolveMixer.shared
+            let pages = max(1, (m.count + 3) / 4)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Text("E16 FOR DAVINCI RESOLVE").font(.title2.bold())
+                    Spacer()
+                    Button(e.connected ? "GIVE BACK THE E16" : "CONNECT THE E16") { e.connected ? e.giveBack() : e.connect() }
+                    Text("LEDs").font(.callout.bold())
+                    Slider(value: $e.ledBrightness, in: 0.05...1).frame(width: 160)
+                    Text("\(Int((e.ledBrightness * 100).rounded())) %").font(.callout.monospaced()).frame(width: 44)
+                }
+                HStack(spacing: 10) {
+                    Button("◀ PAGE") { e.goTo(page: e.page - 1) }.disabled(e.page == 0)
+                    Text("Page \(e.page + 1) of \(pages) · tracks A\(e.page * 4 + 1)–A\(e.page * 4 + 4) · \(m.count) audio tracks on the timeline")
+                        .font(.system(.callout, design: .monospaced).bold()).foregroundStyle(orange)
+                    Button("PAGE ▶") { e.goTo(page: e.page + 1) }.disabled(e.page >= pages - 1)
+                    Button("READ RESOLVE AGAIN") { e.resolveRefresh() }
+                    Spacer()
+                }
+                Text(e.status).font(.system(.callout, design: .monospaced)).foregroundStyle(e.connected ? .green : .secondary)
+                Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+                    GridRow {
+                        Text("TRACK").font(.caption.bold()).frame(width: 190, alignment: .leading)
+                        ForEach(0..<4, id: \.self) { c in
+                            Text("\(c + 1) · \(names[c])").font(.caption.bold()).foregroundStyle(tint[c]).frame(maxWidth: .infinity)
+                        }
+                    }
+                    ForEach(0..<4, id: \.self) { r in
+                        let t = e.page * 4 + r + 1
+                        let tr = m.tracks[t]
+                        GridRow {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("A\(t)  \(t <= m.count ? m.name(t) : "—")").font(.headline)
+                                Text(t > m.count ? "no track" : (tr?.clips ?? 0) == 0 ? "no clips: nothing to turn" : "\(tr!.clips) clips")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }.frame(width: 190, alignment: .leading)
+                            ForEach(0..<4, id: \.self) { c in cell(r * 4 + c, t: t, c: c, m: m) }
+                        }
+                    }
+                }
+                Text("On the E16: column 1 SOLO, 2 MUTE, 3 VOLUME, 4 PAN; each row one track. SOLO and MUTE: turn right on, left off, push toggles. VOLUME: 0.5 dB a click (0.1 with Shift), push = 0 dB. PAN: push = centre. Tap Shift twice to turn the pages (A5–A8 and on). Volume and pan act on every clip of the track; Resolve's scripting cannot reach its Fairlight faders.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            .padding(16)
+        }
+    }
+
+    @ViewBuilder func cell(_ i: Int, t: Int, c: Int, m: ResolveMixer) -> some View {
+        let live = t <= m.count
+        let tr = m.tracks[t]
+        VStack(spacing: 6) {
+            switch c {
+            case 0, 1:
+                let on = c == 0 ? m.solo.contains(t) : m.muted.contains(t)
+                Button(on ? (c == 0 ? "SOLO ON" : "MUTED") : (c == 0 ? "solo" : "mute")) { e.resolvePress(i) }
+                    .buttonStyle(.borderedProminent).tint(on ? tint[c] : .gray.opacity(0.4))
+            case 2:
+                Text((tr?.clips ?? 0) == 0 ? "—" : m.db(tr!.vol) + " dB").font(.title3.monospaced().bold())
+                HStack { Button("−") { e.resolveTurn(i, by: -1) }; Button("0 dB") { e.resolvePress(i) }; Button("+") { e.resolveTurn(i, by: 1) } }
+            default:
+                Text((tr?.clips ?? 0) == 0 ? "—" : m.panWord(tr!.pan)).font(.title3.monospaced().bold())
+                HStack { Button("◀") { e.resolveTurn(i, by: -1) }; Button("C") { e.resolvePress(i) }; Button("▶") { e.resolveTurn(i, by: 1) } }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 70)
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10).fill(tint[c].opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(tint[c].opacity(0.5)))
+        .disabled(!live)
+        .opacity(live ? 1 : 0.35)
     }
 }
