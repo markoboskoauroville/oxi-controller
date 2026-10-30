@@ -278,4 +278,4 @@ screen and rings (Marko's eyes). VU meter: not possible, Resolve's scripting has
 
 > please make this in every application that needs some permission. If permissions are not set, it needs to have text in the top right: "Permissions." Then I click on it, and it opens me directly to my settings page where I need to set permissions.
 
-**Status:** requested 30.10.2026; being built (MANTRA_MANIFEST swift-apps.md, last section).
+**Status:** done in v29 (30.10.2026): the window has no ON / OFF row, so PERMISSIONS (amber, monospaced bold 13) sits at the right end of its first row, after PROFILES…, while Accessibility is off (the only permission used: the knob under the mouse posts drags and key A to Live). A click asks once and opens Privacy_Accessibility. Re-read every 2 s, set only on change; nothing asked at launch. The Resolve copy uses no permission and shows no word. Both apps built and installed; not restarted, neither was running.

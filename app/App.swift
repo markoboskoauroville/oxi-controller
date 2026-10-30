@@ -2,8 +2,9 @@
 // Remote for Oxi E16?"). The window: the sixteen knobs as on the device, the chosen knob's setup beside them, and
 // CONNECT / GIVE BACK / PRESENT THE OXI / the saved setups along the top. The engine is Engine.swift.
 import SwiftUI
+import ApplicationServices
 
-let VERSION = 28
+let VERSION = 29
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -64,11 +65,32 @@ final class Delegate: NSObject, NSApplicationDelegate {
 
 private let orange = Color(red: 1, green: 0.58, blue: 0)
 private let noteBlue = Color(red: 0.36, green: 0.72, blue: 1)
+private let amber = Color(red: 0xE8/255, green: 0xA3/255, blue: 0x3D/255)
+
+// v29: the permissions the Ableton remote uses: Accessibility (the knob under the mouse posts drags and Live's key A to
+// Live, Live.swift). The Resolve copy uses none, so its window shows no word. Never asked at --login.
+enum Permissions {
+    static let needed = ["Accessibility"]
+    static func allowed(_ p: String) -> Bool {
+        switch p {
+        case "Accessibility": return AXIsProcessTrusted()
+        default: return true
+        }
+    }
+    static var missing: [String] { needed.filter { !allowed($0) } }
+    // the system's own request once (it puts the app in the list), then the page of the first one missing
+    static func openMissing() {
+        guard let p = missing.first else { return }
+        if p == "Accessibility" { _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary) }
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_" + p)!)
+    }
+}
 
 struct Main: View {
     @EnvironmentObject var e: Engine
     @State private var view = UserDefaults.standard.string(forKey: "view") ?? "knobs"
     @State private var showProfiles = false
+    @State private var permOK = Permissions.missing.isEmpty   // v29: read every 2 s, set only when it changed
     /// v28 (Marko, 29.10.2026: "You open E16 for DaVinci Resolve, and inside are the settings from Ableton Live"):
     /// the Resolve copy shows only the Resolve mixer.
     var body: some View {
@@ -89,6 +111,16 @@ struct Main: View {
                 TextField("profile", text: $e.setupName).frame(maxWidth: 180)
                 Button("SAVE PROFILE") { e.save() }
                 Button("PROFILES…") { showProfiles = true }
+                // v29 (Marko, 30.10.2026: "If permissions are not set, it needs to have text in the top right"): a
+                // permission missing, PERMISSIONS at the top right; a click opens its page in System Settings
+                if !permOK {
+                    Button(action: Permissions.openMissing) {
+                        Text("PERMISSIONS").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(amber)
+                    }.buttonStyle(.plain).help("Accessibility is off: the knob under the mouse cannot turn Live's controls. This opens its page in System Settings")
+                }
+            }
+            .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+                let p = Permissions.missing.isEmpty; if p != permOK { permOK = p }
             }
             Text(e.status).font(.system(.callout, design: .monospaced))
                 .foregroundStyle(e.connected ? .green : .secondary).fixedSize(horizontal: false, vertical: true)
