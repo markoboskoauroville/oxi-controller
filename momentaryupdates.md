@@ -273,3 +273,9 @@ screen and rings (Marko's eyes). VU meter: not possible, Resolve's scripting has
 "Please come back to the E16 controlling my DaVinci Resolve in the app. I want to have the brightness of the LEDs set."
 
 **Status:** v28: LEDs slider (5–100 %) in the window top bar, kept between runs, applied to every ring sent (Resolve mixer, Ableton knobs, page turner). Both apps rebuilt.
+
+## 30.10.2026: PERMISSIONS at the top right
+
+> please make this in every application that needs some permission. If permissions are not set, it needs to have text in the top right: "Permissions." Then I click on it, and it opens me directly to my settings page where I need to set permissions.
+
+**Status:** requested 30.10.2026; being built (MANTRA_MANIFEST swift-apps.md, last section).
