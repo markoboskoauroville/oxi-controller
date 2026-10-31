@@ -158,6 +158,17 @@ final class ResolveHotkeys {
 
     /// fires the action's key into Resolve; the screen text: "(Play/Stop) SPACE" or "(Solo Tracks) NO KEY"
     func fire(_ action: String) -> String {
+        let said = fireKey(action)
+        // v35: every fire on one line in ~/Library/Logs/e16-resolve.log, with the Accessibility state (a key posted to another
+        // app without it is dropped by macOS without a word)
+        let line = "\(Date()) \(action) -> \(said) · accessibility \(AXIsProcessTrusted() ? "on" : "OFF")\n"
+        let log = NSHomeDirectory() + "/Library/Logs/e16-resolve.log"
+        if !FileManager.default.fileExists(atPath: log) { FileManager.default.createFile(atPath: log, contents: nil) }
+        if let h = FileHandle(forWritingAtPath: log) { h.seekToEndOfFile(); h.write(Data(line.utf8)); h.closeFile() }
+        return AXIsProcessTrusted() ? said : said + " · PERMISSIONS"
+    }
+
+    private func fireKey(_ action: String) -> String {
         reloadIfChanged()
         let label = "(" + ResolveHotkeys.name(action) + ")"
         guard let code = actions[action]?.first else { noteMissing(action); return label + " NO KEY" }

@@ -329,3 +329,4 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > yes, please build it
 
 - v34 MIDI to keyboard (layout: 1 play/stop + playhead; 2-4 Solo Tracks, Mute Tracks, Clear/Restore Solo; 5-8 Auto Select Audio 1-4). **Status:** built, running; 7 of 8 actions have no shortcut in his profile: Marko defines them
+- v35: every hotkey fire logged (~/Library/Logs/e16-resolve.log) with the Accessibility state; the screen adds "· PERMISSIONS" when it is off. Found: E16 for DaVinci Resolve had no Accessibility, so its keys to Resolve were dropped. **Status:** waiting for Marko to switch it on
