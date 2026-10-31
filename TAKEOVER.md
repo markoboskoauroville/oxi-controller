@@ -49,3 +49,9 @@ Resolve.swift resolveTurn: a turn never calls setSolo/setMute (only resolvePress
 (12 frames a click, 1 with Shift; pending turns added up while Resolve answers; ResolveMixer.movePlayhead). Tested via the
 test door (UDP 11010 "turn 1 3"): +36 frames. Found: Ableton Live Actions' MIDI to key stroke row 1 (CC 1 on "Port 1" =
 System volume) also hears knob 1 and moves the Mac's volume: two apps on one E16 port.
+
+## v34, 31.10.2026: MIDI to keyboard
+app/ResolveHotkeys.swift: Marko's keyboard profile (keyboard.preset.xml, a Qt data stream, re-read on change) + the knob map
+~/.config/e16-resolve-map.json (knob -> press/right/left action id; first layout written on first use) -> the key posted to
+Resolve's pid; the screen "(Play/Stop) SPACE" or "(Solo Tracks) NO KEY"; missing ones in ~/.config/e16-resolve-missing.json.
+Unmapped knobs/directions keep the mixer (volume, pan, knob 1's playhead). tools/resolve_keys.py = the same reader in Python.

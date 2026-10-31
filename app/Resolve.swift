@@ -208,6 +208,8 @@ extension Engine {
         // send notes and turning needs to send CC, so they cannot do the same function at the same time ... Encoder number
         // 1, turning it up or down, is going to scroll through the timeline"): a TURN (CC) never switches SOLO or MUTE;
         // that is the PRESS (note) only. Knob 1 turned moves the playhead: 12 frames (half a second) a click, 1 with Shift.
+        // v34: a turn the hotkey map defines fires its key (right / left); otherwise the mixer's turn
+        if let a = ResolveHotkeys.shared.action(knob: i + 1, step > 0 ? "right" : "left") { lastTouched = i; showLive(ResolveHotkeys.shared.fire(a)); return }
         if i == 0 { scrollTimeline(by: Int(step) * (fine ? 1 : 12)); return }
         let f = resolveFunction(i)
         if f <= 1 { showLive("A\(t): TURN DOES NOTHING HERE, PRESS = \(f == 0 ? "SOLO" : "MUTE")"); return }
@@ -248,6 +250,8 @@ extension Engine {
         // v33 (Marko, 31.10.2026: "for davinci resolve, pressing the first knob is going to press play ... actually, play and
         // stop toggle"): Resolve's scripting has no transport, so knob 1 PRESSED sends Resolve its own play/stop key, Space,
         // posted to Resolve's process only (CGEvent.postToPid), never to the app in front
+        // v34: the hotkey map first (Marko's own keyboard profile); a knob it leaves out keeps the mixer's press
+        if let a = ResolveHotkeys.shared.action(knob: i + 1, "press") { lastTouched = i; showLive(ResolveHotkeys.shared.fire(a)); return }
         if i == 0 { playStop(); return }
         let t = resolveTrack(i), m = ResolveMixer.shared
         guard t <= max(m.count, 1) else { return }

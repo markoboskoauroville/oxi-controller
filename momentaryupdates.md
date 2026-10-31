@@ -325,3 +325,7 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > For example, what key solos track 1? If I didn't define a keyboard shortcut for soloing track 1 at all, you need to tell me, and we will do that. also on the matrix display, when the keyboard shortcut is fired, i want to see the name of the action in parentheses, but also which keyboard shortcut is being used
 
 - E16 for DaVinci Resolve becomes MIDI to keyboard (his own profile, read each time; missing shortcuts reported; screen "(action) key"). **Status:** profile decoded (tools/resolve_keys.py: 2364 actions, 291 with keys); Resolve has no per-track solo action, Solo/Mute Tracks (selected) have no key; waiting for Marko's knob layout
+
+> yes, please build it
+
+- v34 MIDI to keyboard (layout: 1 play/stop + playhead; 2-4 Solo Tracks, Mute Tracks, Clear/Restore Solo; 5-8 Auto Select Audio 1-4). **Status:** built, running; 7 of 8 actions have no shortcut in his profile: Marko defines them
