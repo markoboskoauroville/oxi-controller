@@ -231,6 +231,7 @@ final class Engine: ObservableObject {
     @Published var connected = false
     @Published var presenting = false
     @Published var lastTouched: Int? = nil
+    var pendingScroll = 0, scrolling = false        // v28: the playhead moved by knob 1 (Resolve.swift)
     @Published var shift = false
 
     var e16: E16Port?

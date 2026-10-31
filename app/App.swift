@@ -4,7 +4,7 @@
 import SwiftUI
 import ApplicationServices
 
-let VERSION = 31
+let VERSION = 32
 
 @main
 struct DJMantraAbletonRemote: App {

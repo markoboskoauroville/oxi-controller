@@ -304,5 +304,14 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > Pressing needs to send notes and turning needs to send CC, so they cannot do the same function at the same time. Please reprogram my E16 so every press of the button sends a note and every turn sends CC.
 > Encoder number 1, turning it up or down, is going to scroll through the timeline.
 
-- Every encoder: a press sends a NOTE, a turn sends a CC, never the same function (now knob 1's turn also toggles SOLO on column 1). **Status:** checking
-- Encoder 1 turned = scroll through the timeline (playhead). **Status:** next
+- Every encoder: a press sends a NOTE, a turn sends a CC, never the same function. **Status:** done v32: in the Resolve mixer a turn never switches SOLO/MUTE (press only); tested by the test door
+- Encoder 1 turned = scroll through the timeline (playhead). **Status:** done v32: 12 frames a click, 1 with Shift; tested +3 = +36 frames, -2 = -24
+
+> Also, please check why my volume on the computer changes when I turn knob 1. Who is driving that, and where?
+
+- Who changes the Mac's volume when knob 1 turns: find and report. **Status:** found: Ableton Live Actions, MIDI to key stroke, row 1 (CC 1 on "Port 1" = System volume, on) in ~/.config/midi-to-keystroke.json; Marko decides
+
+> Let's sort out the E16 setup, with different applications driving it. Please make an E16 category in the Start menu.
+> Inside it will be all the apps that use E16, and only one can be selected at a time.
+
+- Star: an E16 group with every app that drives the E16 (E16 for DaVinci Resolve, DJ Mantra Ableton Remote, Ableton Live Actions' E16 parts …); only one on at a time. **Status:** next

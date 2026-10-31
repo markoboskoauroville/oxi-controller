@@ -43,3 +43,9 @@ Test door: knob numbers are 1-based for turn and push (push 9 = knob 9 = SOLO of
 `TopRow` in app/App.swift above both views; TOP in UserDefaults "onTop" (each bundle its own); PERMISSIONS moved there
 from the button row; ✕ closes the window only (the app no longer quits with its last window; OFF quits). Accessibility
 identifiers `off`, `top`, `permissions`, `close`: a build can quit a running copy through `off`.
+
+## v32, 31.10.2026: press = note, turn = CC
+Resolve.swift resolveTurn: a turn never calls setSolo/setMute (only resolvePress does); knob 1 turned = scrollTimeline
+(12 frames a click, 1 with Shift; pending turns added up while Resolve answers; ResolveMixer.movePlayhead). Tested via the
+test door (UDP 11010 "turn 1 3"): +36 frames. Found: Ableton Live Actions' MIDI to key stroke row 1 (CC 1 on "Port 1" =
+System volume) also hears knob 1 and moves the Mac's volume: two apps on one E16 port.

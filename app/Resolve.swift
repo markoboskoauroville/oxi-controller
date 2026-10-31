@@ -127,6 +127,28 @@ final class ResolveMixer {
         """
     }
 
+    // MARK: the playhead (v28)
+
+    /// The current timeline's playhead moved by `frames` (negative = back), kept inside the timeline; answers the timecode.
+    func movePlayhead(frames: Int) -> String {
+        q.sync {
+            guard let r = run("""
+                fps = float(pr.GetSetting('timelineFrameRate') or 24) if pr else 24.0
+                f = int(round(fps))
+                def tc2f(tc):
+                    h, m, s, fr = [int(x) for x in tc.replace(';', ':').split(':')]
+                    return ((h * 60 + m) * 60 + s) * f + fr
+                def f2tc(n):
+                    return '%02d:%02d:%02d:%02d' % (n // (3600 * f), n // (60 * f) % 60, n // f % 60, n % f)
+                cur = tc2f(tl.GetCurrentTimecode())
+                new = max(tl.GetStartFrame(), min(tl.GetEndFrame() - 1, cur + (\(frames))))
+                tl.SetCurrentTimecode(f2tc(new))
+                result = {'tc': tl.GetCurrentTimecode()}
+                """), let tc = r["tc"] as? String else { return "PLAYHEAD: RESOLVE DOES NOT ANSWER" }
+            return "PLAYHEAD " + tc
+        }
+    }
+
     // MARK: mute and solo, by turning tracks down to the floor and back
 
     func setMute(_ i: Int, _ on: Bool) -> String {
@@ -181,15 +203,32 @@ extension Engine {
         guard t <= max(m.count, 1) else { showLive("A\(t): THE TIMELINE HAS \(m.count) AUDIO TRACKS"); return }
         lastTouched = i
         let fine = shift
+        // v28 (Marko, 31.10.2026: "When I turn it left or right, it makes solo on the first column ... Pressing needs to
+        // send notes and turning needs to send CC, so they cannot do the same function at the same time ... Encoder number
+        // 1, turning it up or down, is going to scroll through the timeline"): a TURN (CC) never switches SOLO or MUTE;
+        // that is the PRESS (note) only. Knob 1 turned moves the playhead: 12 frames (half a second) a click, 1 with Shift.
+        if i == 0 { scrollTimeline(by: Int(step) * (fine ? 1 : 12)); return }
+        let f = resolveFunction(i)
+        if f <= 1 { showLive("A\(t): TURN DOES NOTHING HERE, PRESS = \(f == 0 ? "SOLO" : "MUTE")"); return }
         DispatchQueue.global().async {
-            let said: String
-            switch self.resolveFunction(i) {
-            case 0: said = m.setSolo(t, step > 0)
-            case 1: said = m.setMute(t, step > 0)
-            case 2: said = m.nudge(t, volume: step * (fine ? 0.1 : 0.5))
-            default: said = m.nudge(t, pan: step * (fine ? 0.5 : 2))
-            }
+            let said = f == 2 ? m.nudge(t, volume: step * (fine ? 0.1 : 0.5)) : m.nudge(t, pan: step * (fine ? 0.5 : 2))
             DispatchQueue.main.async { self.ringsDue = true; self.showLive(said) }
+        }
+    }
+
+    /// v28: the playhead moved by frames; turns that come while Resolve is still moving are added up, never queued one by one
+    func scrollTimeline(by frames: Int) {
+        pendingScroll += frames
+        guard !scrolling else { return }
+        scrolling = true
+        DispatchQueue.global().async {
+            while true {
+                let n: Int = DispatchQueue.main.sync { let x = self.pendingScroll; self.pendingScroll = 0; return x }
+                if n == 0 { break }
+                let said = ResolveMixer.shared.movePlayhead(frames: n)
+                DispatchQueue.main.async { self.showLive(said) }
+            }
+            DispatchQueue.main.async { self.scrolling = false }
         }
     }
 
