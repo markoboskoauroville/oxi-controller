@@ -57,7 +57,7 @@ enum Chats {
     ]
 
     static let system = """
-    You are inside the Mac app "DJ Mantra Ableton Remote for OXI E16". It turns the sixteen knobs of an OXI E16 \
+    You are inside the Mac app "E16 Ableton Remote". It turns the sixteen knobs of an OXI E16 \
     controller into controls for Ableton Live, through AbletonOSC and a virtual MIDI port. Marko describes in his own \
     words what one knob should do; you decide whether the app can do it today.
 

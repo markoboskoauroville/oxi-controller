@@ -177,8 +177,13 @@ final class ResolveHotkeys {
             return label + " RESOLVE IS NOT RUNNING"
         }
         let src = CGEventSource(stateID: .hidSystemState)
+        // v36: as the test that worked (31.10.2026): flags only when there are modifiers, 30 ms between down and up
         for down in [true, false] {
-            if let e = CGEvent(keyboardEventSource: src, virtualKey: kc, keyDown: down) { e.flags = flags; e.postToPid(app.processIdentifier) }
+            if let e = CGEvent(keyboardEventSource: src, virtualKey: kc, keyDown: down) {
+                if !flags.isEmpty { e.flags = flags }
+                e.postToPid(app.processIdentifier)
+            }
+            if down { usleep(30_000) }
         }
         return label + " " + ResolveHotkeys.keyText(code)
     }

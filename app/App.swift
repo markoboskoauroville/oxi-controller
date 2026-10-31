@@ -4,7 +4,7 @@
 import SwiftUI
 import ApplicationServices
 
-let VERSION = 35
+let VERSION = 37
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -13,7 +13,7 @@ struct DJMantraAbletonRemote: App {
         // v28: the Resolve copy says so in its title (Marko: "I don't know where I can control this ... for DaVinci Resolve")
         WindowGroup((Bundle.main.bundleIdentifier ?? "").lowercased().contains("resolve")
                     ? "E16 for DaVinci Resolve · v\(VERSION) · LEDs brightness at the top"
-                    : "DJ Mantra Ableton Remote for OXI E16 · v\(VERSION)") {
+                    : "E16 Ableton Remote · v\(VERSION)") {
             Main().environmentObject(Delegate.engine)
                 .frame(minWidth: 900, minHeight: 620)
         }
@@ -97,7 +97,7 @@ struct Main: View {
     var body: some View {
         // v31: the first row of every app, ON OFF … name … TOP PERMISSIONS ✕ (Marko, 31.10.2026)
         VStack(spacing: 0) {
-            TopRow(name: e.resolveMode ? "E16 for DaVinci Resolve" : "DJ Mantra Ableton Remote for OXI E16",
+            TopRow(name: e.resolveMode ? "E16 for DaVinci Resolve" : "E16 Ableton Remote",
                    permissions: !e.resolveMode && !permOK)
             if e.resolveMode { ResolveWindow() } else { ableton }
         }
@@ -217,7 +217,7 @@ struct TopRow: View {
         .padding(.horizontal, 14).frame(height: 32)
         .onAppear { DispatchQueue.main.async { TopRow.float(onTop) } }
     }
-    static func ours(_ w: NSWindow) -> Bool { w.title.hasPrefix("DJ Mantra Ableton Remote") || w.title.hasPrefix("E16 for DaVinci Resolve") }
+    static func ours(_ w: NSWindow) -> Bool { w.title.hasPrefix("E16 Ableton Remote") || w.title.hasPrefix("DJ Mantra Ableton Remote") || w.title.hasPrefix("E16 for DaVinci Resolve") }
     static func float(_ on: Bool) { for w in NSApp.windows where ours(w) { w.level = on ? .floating : .normal } }
 }
 

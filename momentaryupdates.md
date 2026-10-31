@@ -330,3 +330,13 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 
 - v34 MIDI to keyboard (layout: 1 play/stop + playhead; 2-4 Solo Tracks, Mute Tracks, Clear/Restore Solo; 5-8 Auto Select Audio 1-4). **Status:** built, running; 7 of 8 actions have no shortcut in his profile: Marko defines them
 - v35: every hotkey fire logged (~/Library/Logs/e16-resolve.log) with the Accessibility state; the screen adds "· PERMISSIONS" when it is off. Found: E16 for DaVinci Resolve had no Accessibility, so its keys to Resolve were dropped. **Status:** waiting for Marko to switch it on
+
+> It is done. Now please rename all my applications in the Start menu that use E16, so that E16 becomes the first word. And please remove Mantra and DJ Mantra everywhere it is not parenthesis
+
+- Renamed: the app "E16 Ableton Remote (Mantra)" (was DJ Mantra Ableton Remote for OXI E16), its window and top row; the data folder and Live's MIDI port "DJ Mantra Remote" kept (setups, Live's MIDI map). Accessibility on: knob 1 press plays (tested). **Status:** done v37
+
+> Please, in the same app, since it's now by the way, this is about the G815.
+> I want the G-keys to control something. The G-keys are the column of keys from G1 to G5. Each key should invoke a module of DaVinci Resolve, in the order in which they are shown on the user interface.
+> Pressing the number 1 will trigger number 1, then number 2, then number 3. If I change how many there are, it should also change what it triggers.
+
+- Logitech G815 G1–G5 open DaVinci Resolve's pages in the order of its page bar (G1 = the first page shown …); when Marko shows or hides pages, the keys follow. **Status:** checking how the G-keys arrive

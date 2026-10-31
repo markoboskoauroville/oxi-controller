@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")"
 V=$(sed -n 's/^let VERSION = \([0-9]*\)/\1/p' app/App.swift)
-NAME="DJ Mantra Ableton Remote for OXI E16 (Mantra)"
+NAME="E16 Ableton Remote (Mantra)"
 APP="build/$NAME.app"
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O -swift-version 5 -parse-as-library -o "$APP/Contents/MacOS/DJMantraAbletonRemote" app/*.swift Sources/E16/*.swift
@@ -33,7 +33,7 @@ cat > "$APP/Contents/Info.plist" <<PL
 </dict></plist>
 PL
 codesign --force -s "Mantra Apps" "$APP"
-rm -rf "/Applications/DJ Mantra Ableton Remote.app" "/Applications/$NAME.app"; cp -R "$APP" /Applications/
+rm -rf "/Applications/DJ Mantra Ableton Remote.app" "/Applications/DJ Mantra Ableton Remote for OXI E16 (Mantra).app" "/Applications/$NAME.app"; cp -R "$APP" /Applications/
 echo "built $APP (v$V) and installed it in /Applications"
 
 # v27 (Marko, 29.10.2026): E16 FOR DAVINCI RESOLVE, the same program as its own app (its identifier says "resolve", so
