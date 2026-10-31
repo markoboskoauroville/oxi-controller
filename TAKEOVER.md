@@ -37,3 +37,9 @@ App.swift: --resolve or a bundle identifier with "resolve" turns it on, refresh 
 False for audio, so MUTE/SOLO turn the clips down to −100 dB and give back their own levels (kept in the mixer);
 AudioVolume is dB, AudioPan −100…100. No Mackie Control in Resolve 21.1; no level meters in its scripting.
 Test door: knob numbers are 1-based for turn and push (push 9 = knob 9 = SOLO of the third track).
+
+## v31, 31.10.2026: the first row ON OFF … name … TOP PERMISSIONS ✕
+
+`TopRow` in app/App.swift above both views; TOP in UserDefaults "onTop" (each bundle its own); PERMISSIONS moved there
+from the button row; ✕ closes the window only (the app no longer quits with its last window; OFF quits). Accessibility
+identifiers `off`, `top`, `permissions`, `close`: a build can quit a running copy through `off`.

@@ -285,4 +285,12 @@ screen and rings (Marko's eyes). VU meter: not possible, Resolve's scripting has
 Marko, 31.10.2026: *"Please go to all the interface of my applications. Each needs to have the same user interface
 elements. On, off and top. Please build it in every application."*
 
-Status: pending.
+Status, 31.10.2026: done as **v31**, both apps (DJ Mantra Ableton Remote for OXI E16 and E16 for DaVinci Resolve). The
+window had no ON / OFF row, so the whole first row was added above both views (`TopRow` in app/App.swift): ON (green),
+OFF (grey: quits; the E16 goes back to its scene in applicationWillTerminate), the app's name centred, TOP (green = the
+window floats above every other window, NSWindow.level = .floating; UserDefaults "onTop", per app, applied at launch),
+PERMISSIONS (moved here from the end of the button row, Ableton copy only, while Accessibility is off), ✕ (closes the
+window only: applicationShouldTerminateAfterLastWindowClosed is now false, so the app stays ON until OFF). Every word is
+an Accessibility button (`off`, `top`, `permissions`, `close`). Checked: built, installed, both opened with open -g (the
+E16 was not on USB), each window captured by id at its minimum width 900, TOP pressed through Accessibility twice in
+each (layer 3 then 0). Seen, not changed: at 900 the Ableton copy's knob list loses its left edge (older layout).

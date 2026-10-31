@@ -4,7 +4,7 @@
 import SwiftUI
 import ApplicationServices
 
-let VERSION = 30
+let VERSION = 31
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -60,7 +60,8 @@ final class Delegate: NSObject, NSApplicationDelegate {
     }
     // the E16 back to its scene when the app goes (otherwise it stays blank)
     func applicationWillTerminate(_ n: Notification) { Delegate.engine.giveBack() }
-    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
+    // v31: the ✕ closes the window only, the app stays ON (OFF quits); the Dock or the star opens the window again
+    func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { false }
 }
 
 private let orange = Color(red: 1, green: 0.58, blue: 0)
@@ -94,7 +95,12 @@ struct Main: View {
     /// v28 (Marko, 29.10.2026: "You open E16 for DaVinci Resolve, and inside are the settings from Ableton Live"):
     /// the Resolve copy shows only the Resolve mixer.
     var body: some View {
-        if e.resolveMode { ResolveWindow() } else { ableton }
+        // v31: the first row of every app, ON OFF … name … TOP PERMISSIONS ✕ (Marko, 31.10.2026)
+        VStack(spacing: 0) {
+            TopRow(name: e.resolveMode ? "E16 for DaVinci Resolve" : "DJ Mantra Ableton Remote for OXI E16",
+                   permissions: !e.resolveMode && !permOK)
+            if e.resolveMode { ResolveWindow() } else { ableton }
+        }
     }
     var ableton: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -111,13 +117,7 @@ struct Main: View {
                 TextField("profile", text: $e.setupName).frame(maxWidth: 180)
                 Button("SAVE PROFILE") { e.save() }
                 Button("PROFILES…") { showProfiles = true }
-                // v29 (Marko, 30.10.2026: "If permissions are not set, it needs to have text in the top right"): a
-                // permission missing, PERMISSIONS at the top right; a click opens its page in System Settings
-                if !permOK {
-                    Button(action: Permissions.openMissing) {
-                        Text("PERMISSIONS").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(amber)
-                    }.buttonStyle(.plain).help("Accessibility is off: the knob under the mouse cannot turn Live's controls. This opens its page in System Settings")
-                }
+                // v29's PERMISSIONS moved in v31 to the first row (TopRow), beside TOP and ✕
             }
             .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
                 let p = Permissions.missing.isEmpty; if p != permOK { permOK = p }
@@ -171,6 +171,65 @@ struct Main: View {
         }
         .padding(14)
         .sheet(isPresented: $showProfiles) { ProfilesView().environmentObject(e) }
+    }
+}
+
+// ---------------------------------------------------------------- the first row (v31)
+// Marko, 31.10.2026: "Each needs to have the same user interface elements. On, off and top. Please build it in every
+// application." MANTRA_MANIFEST swift-apps.md, "The first row of every app": ON (green) OFF (grey: quits; the E16 goes
+// back to its scene in applicationWillTerminate), the app's name centred, TOP (green: the window floats above every
+// other window; UserDefaults "onTop", applied at launch), PERMISSIONS only while one is missing, ✕ closes the window.
+private let rowGreen = Color(red: 0x33/255, green: 0xD1/255, blue: 0x7A/255)
+private let rowGrey = Color(red: 0x7A/255, green: 0x80/255, blue: 0x87/255)
+
+struct TopRow: View {
+    let name: String
+    let permissions: Bool
+    @AppStorage("onTop") private var onTop = false
+    var body: some View {
+        ZStack {
+            Text(name).font(.system(size: 13, weight: .bold)).lineLimit(1)
+            HStack(spacing: 10) {
+                Text("ON").foregroundStyle(rowGreen)
+                Text("OFF").foregroundStyle(rowGrey)
+                    .contentShape(Rectangle()).onTapGesture { NSApp.terminate(nil) }
+                    .axButton("Off", id: "off") { DispatchQueue.main.async { NSApp.terminate(nil) } }
+                    .help("Switch the app off: the E16 goes back to its own scene, then the app quits")
+                Spacer()
+                Text("TOP").foregroundStyle(onTop ? rowGreen : rowGrey)
+                    .contentShape(Rectangle()).onTapGesture { onTop.toggle(); TopRow.float(onTop) }
+                    .axButton("Top", id: "top", value: onTop ? "on" : "off") { onTop.toggle(); TopRow.float(onTop) }
+                    .help("Always on top: green, the window stays above every other window")
+                if permissions {
+                    Text("PERMISSIONS").foregroundStyle(amber)
+                        .contentShape(Rectangle()).onTapGesture { Permissions.openMissing() }
+                        .axButton("Permissions", id: "permissions") { Permissions.openMissing() }
+                        .help("Accessibility is off: the knob under the mouse cannot turn Live's controls. This opens its page in System Settings")
+                }
+                Image(systemName: "xmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(rowGrey)
+                    .frame(width: 28, height: 28).contentShape(Rectangle())
+                    .onTapGesture { NSApp.keyWindow?.performClose(nil) }
+                    .axButton("Close window", id: "close") { (NSApp.keyWindow ?? NSApp.windows.first { $0.isVisible && TopRow.ours($0) })?.performClose(nil) }
+                    .help("Close the window (the app stays on)")
+            }
+            .font(.system(size: 12, weight: .bold, design: .monospaced))
+        }
+        .padding(.horizontal, 14).frame(height: 32)
+        .onAppear { DispatchQueue.main.async { TopRow.float(onTop) } }
+    }
+    static func ours(_ w: NSWindow) -> Bool { w.title.hasPrefix("DJ Mantra Ableton Remote") || w.title.hasPrefix("E16 for DaVinci Resolve") }
+    static func float(_ on: Bool) { for w in NSApp.windows where ours(w) { w.level = on ? .floating : .normal } }
+}
+
+extension View {
+    // every control an Accessibility button (MANTRA_MANIFEST swift-apps.md, "Accessibility built in", 31.10.2026)
+    func axButton(_ label: String, id: String, value: String? = nil, _ action: @escaping () -> Void) -> some View {
+        accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityIdentifier(id)
+            .accessibilityValue(value ?? "")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, action)
     }
 }
 
