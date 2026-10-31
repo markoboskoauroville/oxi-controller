@@ -315,3 +315,13 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > Inside it will be all the apps that use E16, and only one can be selected at a time.
 
 - Star: an E16 group with every app that drives the E16 (E16 for DaVinci Resolve, DJ Mantra Ableton Remote, Ableton Live Actions' E16 parts …); only one on at a time. **Status:** next
+
+> for davinci resolve, pressing the first knob is going to press play
+> actually, play and stop toggle
+- E16 for DaVinci Resolve: knob 1 PRESSED = play / stop toggle. **Status:** done v33 (Space to Resolve's pid; his profile: controlPlayToggle = Space); seen playing
+
+> I want you to actually make this E16 for my DragMyDaVinciResolve, basically a MIDI to keyboard application, so it triggers all the possible hotkeys. If some hotkeys are not defined, you need to ask me to define them.
+> Please read my keyboard shortcuts and work with my own keyboard profile. You need to always read the keyboard to find the right key to trigger, so I can map any key and you will always check where it is.
+> For example, what key solos track 1? If I didn't define a keyboard shortcut for soloing track 1 at all, you need to tell me, and we will do that. also on the matrix display, when the keyboard shortcut is fired, i want to see the name of the action in parentheses, but also which keyboard shortcut is being used
+
+- E16 for DaVinci Resolve becomes MIDI to keyboard (his own profile, read each time; missing shortcuts reported; screen "(action) key"). **Status:** profile decoded (tools/resolve_keys.py: 2364 actions, 291 with keys); Resolve has no per-track solo action, Solo/Mute Tracks (selected) have no key; waiting for Marko's knob layout

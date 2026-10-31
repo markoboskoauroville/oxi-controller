@@ -14,6 +14,7 @@
 // Knob i: column i % 4 is the function, row i / 4 the track, the page the group of four (page 2 = A5–A8). Turn right
 // = on and left = off for SOLO and MUTE; a push toggles. Shift tapped twice: the page turner, as everywhere in the app.
 import Foundation
+import AppKit
 
 final class ResolveMixer {
     static let shared = ResolveMixer()
@@ -216,6 +217,17 @@ extension Engine {
         }
     }
 
+    func playStop() {
+        guard let r = NSRunningApplication.runningApplications(withBundleIdentifier: "com.blackmagic-design.DaVinciResolve").first else {
+            showLive("PLAY/STOP: DAVINCI RESOLVE IS NOT RUNNING"); return
+        }
+        let src = CGEventSource(stateID: .hidSystemState)
+        for down in [true, false] {
+            if let e = CGEvent(keyboardEventSource: src, virtualKey: 49, keyDown: down) { e.postToPid(r.processIdentifier) }   // 49 = Space
+        }
+        showLive("PLAY / STOP")
+    }
+
     /// v28: the playhead moved by frames; turns that come while Resolve is still moving are added up, never queued one by one
     func scrollTimeline(by frames: Int) {
         pendingScroll += frames
@@ -233,6 +245,10 @@ extension Engine {
     }
 
     func resolvePress(_ i: Int) {
+        // v33 (Marko, 31.10.2026: "for davinci resolve, pressing the first knob is going to press play ... actually, play and
+        // stop toggle"): Resolve's scripting has no transport, so knob 1 PRESSED sends Resolve its own play/stop key, Space,
+        // posted to Resolve's process only (CGEvent.postToPid), never to the app in front
+        if i == 0 { playStop(); return }
         let t = resolveTrack(i), m = ResolveMixer.shared
         guard t <= max(m.count, 1) else { return }
         lastTouched = i
