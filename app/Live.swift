@@ -3,9 +3,9 @@
 // and pressing it creates the key frame in the automation line. The third button is scrubbing the timeline. When I
 // press it, it's stop/play").
 //
-// Live's own API answers through AbletonOSC (a Remote Script in the User Library) on UDP; Ableton Live Actions'
-// router takes every app's OSC on 127.0.0.1:11002 and passes it on, so this app never fights A1 for Live's one
-// answering port (ABLETON_LIVE_ACTIONS README, "The OSC router"). What the API cannot do — show the automation lanes —
+// Live's own API answers through AbletonOSC (a Remote Script in the User Library) on UDP. USE, LET GO (31.10.2026):
+// orders go straight to 11000; a question takes the shared turn on Live's one answering port 11001 and lets it go
+// (LiveTurn.swift, manifest ableton-live-audio.md), so this app never fights another for it and needs no router. What the API cannot do — show the automation lanes —
 // is Live's own key, A (Automation Mode in the Arrangement), sent to Live's process only.
 import AppKit
 import Foundation
@@ -45,9 +45,10 @@ final class Live {
         return d
     }
 
+    /// An order to Live: straight to AbletonOSC on 11000 (USE, LET GO, 31.10.2026: no router, no port kept).
     func send(_ address: String, _ args: Any...) {
         let d = Live.message(address, args)
-        var to = router
+        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11000).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
         _ = d.withUnsafeBytes { b in withUnsafePointer(to: &to) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
             sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
     }
@@ -92,19 +93,14 @@ final class Live {
         return (addr, out)
     }
 
-    /// Ask and wait for the answer (up to [ms]).
+    /// Ask and wait for the answer (up to [ms]). USE, LET GO (Marko, 31.10.2026): the question takes the shared turn on
+    /// Live's answer port 11001 and lets it go (LiveTurn.swift); it works whether Ableton Live Actions runs or not.
+    /// True and false come back as 1 and 0, as this app has always read them.
     func ask(_ address: String, _ args: Any..., ms: Int = 400) -> [Any]? {
-        lock.lock(); heard[address] = nil; lock.unlock()
-        let d = Live.message(address, args); var to = router
-        _ = d.withUnsafeBytes { b in withUnsafePointer(to: &to) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-            sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
-        let until = Date().addingTimeInterval(Double(ms) / 1000)
-        while Date() < until {
-            lock.lock(); let a = heard[address]; lock.unlock()
-            if let a { return a }
-            usleep(5000)
-        }
-        return nil
+        guard let r = LiveTurn.ask(address, args, wait: max(0.4, Double(ms) / 1000)) else { return nil }
+        let out: [Any] = r.map { ($0 as? Bool).map { $0 ? 1 : 0 } ?? $0 }
+        lock.lock(); heard[address] = out; lock.unlock()
+        return out
     }
 
     // MARK: the profile's actions
