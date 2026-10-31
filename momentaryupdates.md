@@ -294,3 +294,15 @@ window only: applicationShouldTerminateAfterLastWindowClosed is now false, so th
 an Accessibility button (`off`, `top`, `permissions`, `close`). Checked: built, installed, both opened with open -g (the
 E16 was not on USB), each window captured by id at its minimum width 900, TOP pressed through Accessibility twice in
 each (layer 3 then 0). Seen, not changed: at 900 the Ableton copy's knob list loses its left edge (older layout).
+**Status:** done 31.10.2026: both hooks out of ~/.claude/settings.json (checked with jq: no subtitle_ left, Stop keeps
+persist.py), CLAUDE.md's rule replaced, a memory written.
+
+## 31.10.2026
+
+> Now the E16 for DaVinci Resolve is open. We need to work on that one, so let's change the knobs.
+> First, knob number 1. When I turn it left or right, it makes solo on the first column, for example, by pressing and by turning. That is a mistake, and we don't want that.
+> Pressing needs to send notes and turning needs to send CC, so they cannot do the same function at the same time. Please reprogram my E16 so every press of the button sends a note and every turn sends CC.
+> Encoder number 1, turning it up or down, is going to scroll through the timeline.
+
+- Every encoder: a press sends a NOTE, a turn sends a CC, never the same function (now knob 1's turn also toggles SOLO on column 1). **Status:** checking
+- Encoder 1 turned = scroll through the timeline (playhead). **Status:** next
