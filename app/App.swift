@@ -4,7 +4,7 @@
 import SwiftUI
 import ApplicationServices
 
-let VERSION = 37
+let VERSION = 38
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -611,6 +611,7 @@ struct ResolveWindow: View {
                     Spacer()
                 }
                 Text(e.status).font(.system(.callout, design: .monospaced)).foregroundStyle(e.connected ? .green : .secondary)
+                G815Row()                                   // v38: the G815's G1–G5 = Resolve's pages, the current one lit
                 Grid(horizontalSpacing: 10, verticalSpacing: 10) {
                     GridRow {
                         Text("TRACK").font(.caption.bold()).frame(width: 190, alignment: .leading)

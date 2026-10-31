@@ -340,3 +340,12 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > Pressing the number 1 will trigger number 1, then number 2, then number 3. If I change how many there are, it should also change what it triggers.
 
 - Logitech G815 G1–G5 open DaVinci Resolve's pages in the order of its page bar (G1 = the first page shown …); when Marko shows or hides pages, the keys follow. **Status:** checking how the G-keys arrive
+
+> We built a Swift app to control the keyboard. You use that code.
+
+- The G815 G-keys: reuse the existing Swift keyboard app's code. **Status:** finding it
+
+> This works. I just don't see in the user interface that it's active.
+> Please show that it's active, and when I press the button, it needs to light up in the user interface of the E16 for DaVinci Resolve.
+
+- E16 for DaVinci Resolve window: a G815 row (G1–G5 = Resolve's pages), the current page lit orange, the pressed key flashing white. **Status:** built v38 (app/G815Pages.swift), running
