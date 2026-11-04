@@ -44,6 +44,7 @@ rm -rf "$R"; cp -R "$APP" "$R"
 plutil -replace CFBundleIdentifier -string community.auroville.e16resolve "$R/Contents/Info.plist"
 plutil -replace CFBundleName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
 plutil -replace CFBundleDisplayName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
+cp icon/e16resolve.icns "$R/Contents/Resources/AppIcon.icns"  # its own six letters, E16 DVR (4.11.2026)
 codesign --force -s "Mantra Apps" "$R"
 rm -rf "/Applications/E16 for DaVinci Resolve (Mantra).app"; cp -R "$R" /Applications/
 echo "built $R (v$V) and installed it in /Applications"
