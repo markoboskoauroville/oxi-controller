@@ -263,7 +263,7 @@ final class Engine: ObservableObject {
         // the rings at most 30 times a second, whatever the knobs do
         Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in self?.flushRings() }
         // v13 (Marko, 26.10.2026: "the device itself is on the camera, so you can use the camera to test"): a test door
-        // on 127.0.0.1:11010 (UDP): "turn N STEP", "push N", "release N", "shift 0|1" act as the E16's own messages
+        // on 127.0.0.1:11012 (UDP): "turn N STEP", "push N", "release N", "shift 0|1" act as the E16's own messages
         Thread { [weak self] in self?.testDoor() }.start()
         // v8 (Marko, 26.10.2026: "our device is reading selected parameters ... it shows the value with an LED ... If I
         // click on other parameters, the value is read from that parameter"): a SELECTED knob's ring follows Live
@@ -272,9 +272,9 @@ final class Engine: ObservableObject {
 
     private func testDoor() {
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
-        var a = sockaddr_in(); a.sin_family = sa_family_t(AF_INET); a.sin_port = in_port_t(11010).bigEndian; a.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var a = sockaddr_in(); a.sin_family = sa_family_t(AF_INET); a.sin_port = in_port_t(11012).bigEndian; a.sin_addr.s_addr = inet_addr("127.0.0.1")
         guard withUnsafePointer(to: &a, { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }) == 0 else { return }
-        Ports.record("oxi-testdoor", 11010, udp: true)     // its one owner in the Mac's port registry (MANTRA_PORTS v2, 27.10.2026)
+        Ports.record("oxi-testdoor", 11012, udp: true)     // its one owner in the Mac's port registry (MANTRA_PORTS v2, 27.10.2026)
         var buf = [UInt8](repeating: 0, count: 256)
         while true {
             let n = recv(fd, &buf, buf.count, 0); guard n > 0 else { continue }

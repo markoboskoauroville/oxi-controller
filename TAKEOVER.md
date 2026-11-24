@@ -24,7 +24,7 @@ Terminal with `--import` and `--ask` on Haiku, Sonnet and Opus. The window itsel
 - **v22:** app/Screen.swift draws the 128×64 framebuffer: two 5-letter lines a knob, and Live's answer shown big for 2 s.
 - **v23:** tap Shift twice for the page turner (Marko's name, 26.10.2026; v25 makes knob 16 red). Knob 16 turns the pages, pushes 1–15 jump to a page, Shift twice exits.
 - **v24:** PROFILES… → PLACE puts a profile on a page. Page names are kept in layout.json, loaded at start.
-- **Test door** (UDP 11010): `turn N STEP`, `push N`, `release N`, `shift 0|1`, `present`, `role N ROLE`, `nav`, `place NAME PAGE`.
+- **Test door** (UDP 11012): `turn N STEP`, `push N`, `release N`, `shift 0|1`, `present`, `role N ROLE`, `nav`, `place NAME PAGE`.
 - **Open for Marko's hand:** the picker and PLACE on the E16, a real MIDI Map in Live with the new numbers, and the ring colours.
 
 ## v27 (29.10.2026): E16 FOR DAVINCI RESOLVE
@@ -47,7 +47,7 @@ identifiers `off`, `top`, `permissions`, `close`: a build can quit a running cop
 ## v32, 31.10.2026: press = note, turn = CC
 Resolve.swift resolveTurn: a turn never calls setSolo/setMute (only resolvePress does); knob 1 turned = scrollTimeline
 (12 frames a click, 1 with Shift; pending turns added up while Resolve answers; ResolveMixer.movePlayhead). Tested via the
-test door (UDP 11010 "turn 1 3"): +36 frames. Found: Ableton Live Actions' MIDI to key stroke row 1 (CC 1 on "Port 1" =
+test door (UDP 11012 "turn 1 3"): +36 frames. Found: Ableton Live Actions' MIDI to key stroke row 1 (CC 1 on "Port 1" =
 System volume) also hears knob 1 and moves the Mac's volume: two apps on one E16 port.
 
 ## v34, 31.10.2026: MIDI to keyboard

@@ -32,9 +32,10 @@ cat > "$APP/Contents/Info.plist" <<PL
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PL
-codesign --force -s "Mantra Apps" "$APP"
-rm -rf "/Applications/DJ Mantra Ableton Remote.app" "/Applications/DJ Mantra Ableton Remote for OXI E16 (Mantra).app" "/Applications/$NAME.app"; cp -R "$APP" /Applications/
-echo "built $APP (v$V) and installed it in /Applications"
+codesign --force -s "${SIGN:-Mantra Apps}" "$APP"
+[ -n "$NO_INSTALL" ] || rm -rf "/Applications/DJ Mantra Ableton Remote.app" "/Applications/DJ Mantra Ableton Remote for OXI E16 (Mantra).app" "/Applications/$NAME.app"
+[ -n "$NO_INSTALL" ] || cp -R "$APP" /Applications/
+echo "built $APP (v$V)"
 
 # v27 (Marko, 29.10.2026): E16 FOR DAVINCI RESOLVE, the same program as its own app (its identifier says "resolve", so
 # it starts as the Resolve mixer: SOLO, MUTE, VOLUME, PAN of four audio tracks a page). Only one of the two may hold
@@ -45,6 +46,6 @@ plutil -replace CFBundleIdentifier -string community.auroville.e16resolve "$R/Co
 plutil -replace CFBundleName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
 plutil -replace CFBundleDisplayName -string "E16 for DaVinci Resolve (Mantra)" "$R/Contents/Info.plist"
 cp icon/e16resolve.icns "$R/Contents/Resources/AppIcon.icns"  # its own six letters, E16 DVR (4.11.2026)
-codesign --force -s "Mantra Apps" "$R"
-rm -rf "/Applications/E16 for DaVinci Resolve (Mantra).app"; cp -R "$R" /Applications/
-echo "built $R (v$V) and installed it in /Applications"
+codesign --force -s "${SIGN:-Mantra Apps}" "$R"
+[ -n "$NO_INSTALL" ] || { rm -rf "/Applications/E16 for DaVinci Resolve (Mantra).app"; cp -R "$R" /Applications/; }
+echo "built $R (v$V)"

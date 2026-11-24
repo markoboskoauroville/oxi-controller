@@ -4,7 +4,7 @@
 // press it, it's stop/play").
 //
 // Live's own API answers through AbletonOSC (a Remote Script in the User Library) on UDP. USE, LET GO (31.10.2026):
-// orders go straight to 11000; a question takes the shared turn on Live's one answering port 11001 and lets it go
+// orders go straight to 11010; a question takes the shared turn on Live's one answering port 11011 and lets it go
 // (LiveTurn.swift, manifest ableton-live-audio.md), so this app never fights another for it and needs no router. What the API cannot do — show the automation lanes —
 // is Live's own key, A (Automation Mode in the Arrangement), sent to Live's process only.
 import AppKit
@@ -45,20 +45,20 @@ final class Live {
         return d
     }
 
-    /// An order to Live: straight to AbletonOSC on 11000 (USE, LET GO, 31.10.2026: no router, no port kept).
+    /// An order to Live: straight to AbletonOSC on 11010 (USE, LET GO, 31.10.2026: no router, no port kept).
     func send(_ address: String, _ args: Any...) {
         let d = Live.message(address, args)
-        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11000).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11010).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
         _ = d.withUnsafeBytes { b in withUnsafePointer(to: &to) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
             sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
     }
 
-    /// Straight to AbletonOSC on 11000, past the router: for a command that needs no answer, so it works whoever holds
-    /// 11001 (v20, 26.10.2026: the star's a1_ears.py took 11001 when Live started, A1's router never came up, and the
-    /// zoom went nowhere). The answer, if any, goes to 11001's holder; this app does not wait for it.
+    /// Straight to AbletonOSC on 11010, past the router: for a command that needs no answer, so it works whoever holds
+    /// 11011 (v20, 26.10.2026: the star's a1_ears.py took 11011 when Live started, A1's router never came up, and the
+    /// zoom went nowhere). The answer, if any, goes to 11011's holder; this app does not wait for it.
     func sendDirect(_ address: String, _ args: Any...) {
         let d = Live.message(address, args)
-        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11000).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var to = sockaddr_in(); to.sin_family = sa_family_t(AF_INET); to.sin_port = in_port_t(11010).bigEndian; to.sin_addr.s_addr = inet_addr("127.0.0.1")
         _ = d.withUnsafeBytes { b in withUnsafePointer(to: &to) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
             sendto(fd, b.baseAddress, d.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
     }
@@ -94,7 +94,7 @@ final class Live {
     }
 
     /// Ask and wait for the answer (up to [ms]). USE, LET GO (Marko, 31.10.2026): the question takes the shared turn on
-    /// Live's answer port 11001 and lets it go (LiveTurn.swift); it works whether Ableton Live Actions runs or not.
+    /// Live's answer port 11011 and lets it go (LiveTurn.swift); it works whether Ableton Live Actions runs or not.
     /// True and false come back as 1 and 0, as this app has always read them.
     func ask(_ address: String, _ args: Any..., ms: Int = 400) -> [Any]? {
         guard let r = LiveTurn.ask(address, args, wait: max(0.4, Double(ms) / 1000)) else { return nil }

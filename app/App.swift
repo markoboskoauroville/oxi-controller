@@ -4,7 +4,8 @@
 import SwiftUI
 import ApplicationServices
 
-let VERSION = 38
+let VERSION = 39
+let APP_NAME = "E16 Ableton Remote (Mantra)"
 
 @main
 struct DJMantraAbletonRemote: App {
@@ -57,6 +58,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
             if a.contains("--profile"), a.contains("automation") { e.liveAutomationProfile() }
             if let i = a.firstIndex(of: "--help-page"), i + 1 < a.count, let n = Int(a[i + 1]) { e.helpPage = n - 2; e.helpTurn(1) }
         }
+        Updater.checkAtStart()   // v39: asks to update at start (MANTRA_MANIFEST kits/mac-updater)
     }
     // the E16 back to its scene when the app goes (otherwise it stays blank)
     func applicationWillTerminate(_ n: Notification) { Delegate.engine.giveBack() }

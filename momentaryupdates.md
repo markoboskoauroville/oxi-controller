@@ -349,3 +349,4 @@ persist.py), CLAUDE.md's rule replaced, a memory written.
 > Please show that it's active, and when I press the button, it needs to light up in the user interface of the E16 for DaVinci Resolve.
 
 - E16 for DaVinci Resolve window: a G815 row (G1–G5 = Resolve's pages), the current page lit orange, the pressed key flashing white. **Status:** built v38 (app/G815Pages.swift), running
+- **v39 (23.11.2026):** AbletonOSC moved to UDP 11010/11011 (23.11.2026); test door moved 11010 -> 11012. Workflow and updater added.

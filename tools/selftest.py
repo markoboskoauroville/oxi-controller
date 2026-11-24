@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py OUTDIR — the app's knobs exercised through its test door (127.0.0.1:11010), Live read back through
+"""selftest.py OUTDIR — the app's knobs exercised through its test door (127.0.0.1:11012), Live read back through
 AbletonOSC (127.0.0.1:11002, the router), and the E16 photographed by the Pixel camera (adb, 192.168.1.101:5555)
 after every step. Marko, 26.10.2026: "the device itself is on the camera, so you can use the camera to test"."""
 import socket, struct, subprocess, sys, time, os
@@ -37,7 +37,7 @@ def ask(a, *v):
             r = parse(live.recv(65536))
             if r[0] == a: return r[1]
         except socket.timeout: pass
-def do(cmd, wait=2.0): door.sendto(cmd.encode(), ('127.0.0.1', 11010)); time.sleep(wait)
+def do(cmd, wait=2.0): door.sendto(cmd.encode(), ('127.0.0.1', 11012)); time.sleep(wait)
 n = 0
 def snap(label):
     global n; n += 1

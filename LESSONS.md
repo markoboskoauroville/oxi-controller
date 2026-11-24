@@ -29,3 +29,9 @@ nowhere, and Live's log showed nothing. A command that needs no answer (ZOOM) no
 11000 (`Live.sendDirect`). The roles that read an answer (SELECTED, CLIP PITCH, PARAMETER STEP, the status line)
 still need the router, so they need Live Actions' A1 to hold 11001. Test first: `lsof -nP -iUDP | grep 1100`
 should show the router listening on 11002.
+
+## 23.11.2026: AbletonOSC moved to UDP 11010/11011, the test door to 11012 (v39)
+
+AbletonOSC listens on 11010 and answers on 11011 (Suno Bridge needs 11000). The app's own test door was on 11010 and
+now sits on 11012 (Engine.swift, tools/selftest.py, mantra-ports.json "oxi-testdoor"). v39 also gets its GitHub
+workflow (.github/workflows/build.yml) and the start-up updater (app/Updater.swift).
